@@ -64,11 +64,25 @@ Added after the pilot scored 100% on the cases above. Subtler implicit requests,
 
 ## Holdout (tag `holdout`)
 
-Not used when editing the description; they check that a change generalizes instead of fitting the cases above.
+Not used when editing the description; they check that a change generalizes instead of fitting the cases above. The first four were added with description round 2; `p27` to `p33` and `n29` to `n35` were written afterwards, without looking at the description's example phrases, and avoid its trigger words ("map", "document", "audit", "cheat sheet", "write down"). Keep it that way: when a holdout case is used to tune the description, move it to the `hard` set and write a fresh one.
 
 | id | expected | category | prompt |
 | --- | --- | --- | --- |
 | `p25-zapier-notes-stale` | fires | audit | Our notes on the Zapier account are probably out of date. Go through them and confirm each zap and connection ID still exists. |
 | `p26-activecampaign-colinha-pt` | fires | implicit | Monta uma colinha com os IDs das listas, tags e campos do nosso ActiveCampaign pra você consultar antes de disparar qualquer coisa. |
+| `p27-klaviyo-handbook` | fires | implicit | Before you send anything from our Klaviyo account, put together a handbook of it: which lists and segments are live, the flow IDs, the metric names we track, and which sends need my sign-off. |
+| `p28-intercom-admin-slip` | fires | update | The Intercom tagging call failed twice today because you used the wrong admin ID. Keep that somewhere the next session will see it, so it doesn't happen a third time. |
+| `p29-monday-handover-pt` | fires | implicit | Semana que vem a operação do monday.com passa pra você. Levanta tudo que precisa saber dos nossos boards, colunas e automações e deixa salvo num arquivo pra consultar depois. |
+| `p30-quickbooks-new-client` | fires | implicit | We took on a new bookkeeping client on QuickBooks Online. Learn their company file first (chart of accounts, classes, the customers we bill most) and save it, along with what you must not post without asking. |
+| `p31-webflow-drift-pt` | fires | audit | Faz tempo que ninguém mexe nas anotações do Webflow. Confere se as collections e os IDs dos campos ainda batem com o site de hoje. |
+| `p32-segment-briefing` | fires | implicit | Another agent will run our Segment workspace next quarter. Leave it a briefing file with our sources, destinations, the event names in the tracking plan, and what it must never change. |
+| `p33-greenhouse-one-file` | fires | implicit | Put everything an assistant would need to post jobs in our Greenhouse account without asking me into one file: job board IDs, departments, custom fields and the approval rules. |
 | `n27-git-cheatsheet` | does not fire | word-trap | Make me a cheat sheet of the git commands I use most. |
 | `n28-check-webhook` | does not fire | operation | Check whether our Stripe webhook endpoint is still receiving events from the live account. |
+| `n29-runbook-failover` | does not fire | other | Write a runbook for our on-call engineers on what to do when the Postgres primary fails over. |
+| `n30-remember-preference` | does not fire | other | Remember that I prefer short answers in bullet points from now on. |
+| `n31-api-summary-pt` | does not fire | oneoff-question | Resume num arquivo como funcionam as mutations de itens na API do monday.com, pra eu ler depois. |
+| `n32-reconcile` | does not fire | operation | Reconcile last month's QuickBooks bank transactions against our Stripe payouts. |
+| `n33-tracking-plan-design` | does not fire | other | Design a tracking plan for our new mobile app: which events and properties we should send to Segment. |
+| `n34-webflow-seo-audit` | does not fire | word-trap | Audit our Webflow site for SEO problems: missing meta descriptions, broken links and oversized images. |
+| `n35-fix-intercom-script` | does not fire | operation | The Intercom API returns 404 when scripts/tag_conversation.py tags a conversation. Find the bug and fix it. |
