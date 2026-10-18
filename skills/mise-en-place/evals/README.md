@@ -2,9 +2,9 @@
 
 Trigger eval: does the skill fire when it should, and stay out of the way when it shouldn't? It measures the `description` in `SKILL.md`, which is the cheapest and most attributable surface to improve.
 
-- 26 `should-trigger` cases (explicit requests, implicit "map the account before we use it", updates, audits; English and Portuguese).
-- 28 `should-not-trigger` near misses: one-off questions about a tool, day-to-day operation, writing an MCP server, mapping a codebase, and the cooking meaning of "mise en place".
-- Three sets: the base 32 (16 per side), a `hard` set (8 should-trigger, 10 should-not-trigger) and a `holdout` set (2 per side).
+- 33 `should-trigger` cases (explicit requests, implicit "map the account before we use it", updates, audits; English and Portuguese).
+- 35 `should-not-trigger` near misses: one-off questions about a tool, day-to-day operation, writing an MCP server, mapping a codebase, and the cooking meaning of "mise en place".
+- Three sets: the base 32 (16 per side), a `hard` set (8 should-trigger, 10 should-not-trigger) and a `holdout` set (9 should-trigger, 9 should-not-trigger).
 - Each case has one deterministic grader (`tool_used: Skill` matching `mise-en-place`), so no LLM judge and no judge cost.
 
 The full list is in [CASES.md](CASES.md).
@@ -34,7 +34,7 @@ claude plugin eval ./skills/mise-en-place --ablation none \
 
 Report recall (share of `should-trigger` runs that fired) and the false-positive rate (share of `should-not-trigger` runs that fired) separately: a description change can trade one for the other.
 
-The noise in a rate is roughly `1/sqrt(runs)`. A full run (26 to 28 cases per side, 3 runs each, about 80 runs per side) moves by about ±11 points from noise alone; one tag on its own, such as the 8 `hard` should-trigger cases × 3 runs, moves by about ±20. A smaller change between two runs is not a real difference.
+The noise in a rate is roughly `1/sqrt(runs)`. A full run (33 to 35 cases per side, 3 runs each, about 100 runs per side) moves by about ±10 points from noise alone; one tag on its own, such as the 9 `holdout` should-trigger cases × 3 runs, moves by about ±19. A smaller change between two runs is not a real difference.
 
 ## Limits
 
