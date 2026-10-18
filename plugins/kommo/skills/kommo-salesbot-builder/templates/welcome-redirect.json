@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "name": "welcome-redirect",
+    "pattern": "single message + finish",
+    "description": "Envia 1 mensagem de boas-vindas (ex.: redireciona pro WhatsApp) e encerra. Bom pra entrada de Instagram/anúncio.",
+    "source_bot": "welcome-redirect.source.json",
+    "channels": [
+      "any"
+    ]
+  },
+  "slots": [
+    {
+      "name": "bot_name",
+      "kind": "text",
+      "required": true,
+      "hint": "nome do bot no Kommo"
+    },
+    {
+      "name": "welcome_text",
+      "kind": "text",
+      "required": true,
+      "hint": "texto da mensagem de boas-vindas (pode ter \\n e emojis)"
+    },
+    {
+      "name": "chat_source",
+      "kind": "chat_source",
+      "required": true,
+      "sentinel": -901,
+      "hint": "id do canal VERIFICADO da conta-alvo (lift de um bot existente)"
+    }
+  ],
+  "lir": {
+    "type_functionality": 0,
+    "name": "<<bot_name>>",
+    "type": 2,
+    "text": {
+      "0": {
+        "question": [
+          {
+            "params": {
+              "tag": "",
+              "text": "<<welcome_text>>",
+              "type": "external",
+              "on_error": null,
+              "recipient": {
+                "type": "all_contacts",
+                "way_of_communication": "over_all"
+              },
+              "chat_sources": [
+                {
+                  "id": -901
+                }
+              ],
+              "is_in_starting_block": true,
+              "create_chat_if_not_exists": true
+            },
+            "handler": "send_message"
+          },
+          {
+            "params": {
+              "step": 1,
+              "type": "finish"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "50bc7ae6-6d0f-403f-ab5d-bc5be11b1ea3"
+      },
+      "conversation": false
+    },
+    "positions": [
+      {
+        "id": 0,
+        "goto": {
+          "block": 1
+        },
+        "step": -1,
+        "type": "start",
+        "actions": [
+          {
+            "id": -3,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": [],
+              "handler": "_start"
+            }
+          }
+        ],
+        "deletable": true
+      },
+      {
+        "id": -1,
+        "code": "trigger",
+        "step": -1,
+        "type": "static",
+        "actions": [],
+        "deletable": true
+      },
+      {
+        "id": 1,
+        "goto": {
+          "block": 7
+        },
+        "name": "Enviar mensagem",
+        "step": 0,
+        "type": "question",
+        "actions": [
+          {
+            "id": 57,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "tag": "",
+                "text": "<<welcome_text>>",
+                "type": "external",
+                "recipient": {
+                  "type": "all_contacts",
+                  "way_of_communication": "over_all"
+                },
+                "chat_sources": [
+                  {
+                    "id": -901
+                  }
+                ],
+                "is_in_starting_block": true,
+                "create_chat_if_not_exists": true
+              },
+              "handler": "send_message"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "50bc7ae6-6d0f-403f-ab5d-bc5be11b1ea3"
+      },
+      {
+        "id": 7,
+        "step": 1,
+        "type": "finish",
+        "actions": [
+          {
+            "id": 65,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": [],
+              "handler": "_stop"
+            }
+          }
+        ],
+        "deletable": true
+      }
+    ]
+  }
+}

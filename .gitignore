@@ -3,3 +3,4 @@ __pycache__/
 ads-ops-runs/
 .claude/*.local.json
 .claude/*.local.md
+kommo-reports/

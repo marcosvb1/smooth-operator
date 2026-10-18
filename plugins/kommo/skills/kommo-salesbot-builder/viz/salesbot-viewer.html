@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kommo Salesbot Viewer</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#161a21; --panel2:#1c222c; --line:#2a3340;
+    --ink:#e7edf5; --muted:#94a3b8; --faint:#64748b;
+    --send:#3b82f6; --wait:#f59e0b; --cond:#a855f7; --dist:#14b8a6;
+    --trig:#64748b; --act:#22c55e; --start:#0ea5e9; --finish:#ef4444; --startbot:#eab308;
+    --warn:#f97316; --chip:#243042;
+    --shadow:0 1px 0 rgba(255,255,255,.03),0 8px 24px rgba(0,0,0,.35);
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);
+  }
+  header{
+    display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#171c24,#12161d);position:sticky;top:0;z-index:30;
+  }
+  header h1{font-size:15px;margin:0;font-weight:650;letter-spacing:.2px}
+  header h1 small{color:var(--muted);font-weight:400}
+  .grow{flex:1}
+  .btn{
+    background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:9px;
+    padding:7px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+    transition:.12s border-color,.12s background;
+  }
+  .btn:hover{border-color:#3b475a;background:#212835}
+  .btn.primary{background:var(--send);border-color:transparent;color:#fff}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{background:transparent;border:0;color:var(--muted);padding:7px 13px;font-size:13px;cursor:pointer}
+  .seg button.on{background:var(--panel2);color:var(--ink)}
+  .layout{display:flex;height:calc(100vh - 53px)}
+  .side{width:300px;min-width:300px;border-right:1px solid var(--line);background:var(--panel);overflow:auto;padding:16px}
+  .main{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column}
+  .toolbar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);background:#12161d;z-index:5}
+  .zoom{margin-left:auto;display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12px}
+  .zoom button{width:28px;height:28px;line-height:1;font-size:16px}
+
+  /* drop / empty */
+  .drop{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;
+    gap:16px;text-align:center;color:var(--muted);z-index:6;padding:40px}
+  .drop.hide{display:none}
+  .drop .big{font-size:18px;color:var(--ink);font-weight:600}
+  .drop .dz{border:2px dashed var(--line);border-radius:16px;padding:34px 48px;max-width:520px;
+    background:rgba(255,255,255,.015);transition:.15s}
+  .drop.over .dz{border-color:var(--send);background:rgba(59,130,246,.08)}
+
+  /* canvas / stage */
+  .canvas{flex:1;overflow:auto;position:relative;background:
+    radial-gradient(circle at 1px 1px, #1b212b 1px, transparent 0) 0 0/26px 26px,var(--bg)}
+  .stage{position:relative;transform-origin:0 0}
+  svg.edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+  .edge-label{fill:var(--muted);font-size:11px}
+  .edge-label-bg{fill:#12161d;stroke:var(--line);stroke-width:1}
+
+  .node{
+    position:absolute;width:288px;background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;cursor:default;
+    border-top:3px solid var(--c);
+  }
+  .node .nh{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--panel2)}
+  .node .nh .ic{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:13px;
+    background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c);flex:none}
+  .node .nh .tt{font-weight:600;font-size:13px}
+  .node .nh .badge{margin-left:auto;font-size:11px;color:var(--faint);background:var(--chip);
+    border:1px solid var(--line);border-radius:20px;padding:1px 8px}
+  .node .nb{padding:9px 11px;display:flex;flex-direction:column;gap:8px;max-height:210px;overflow:auto}
+  .node.mini{width:188px}
+  .node.mini .nb{padding-top:2px}
+  .hline{display:flex;gap:7px;align-items:flex-start;font-size:12.5px}
+  .hline .hic{flex:none;opacity:.85}
+  .hline .htx{color:var(--ink);min-width:0}
+  .hline .htx .lbl{color:var(--muted)}
+  .msg{white-space:pre-wrap;word-break:break-word;background:#0e1218;border:1px solid var(--line);
+    border-radius:8px;padding:7px 9px;font-size:12.5px;color:#d7e2f0;max-height:120px;overflow:auto}
+  .ph{color:#7dd3fc;background:rgba(125,211,252,.12);border-radius:4px;padding:0 3px}
+  .btns{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+  .btnchip{font-size:11px;border:1px solid var(--line);border-radius:14px;padding:2px 8px;color:var(--muted);background:#0e1218}
+  .prodflag{font-size:11px;color:var(--warn);display:inline-flex;align-items:center;gap:4px}
+
+  /* sidebar */
+  .side h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:18px 0 8px}
+  .side h2:first-child{margin-top:0}
+  .meta{font-size:13px}
+  .meta .nm{font-size:16px;font-weight:650;margin-bottom:2px;word-break:break-word}
+  .kv{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dashed #232b36;font-size:12.5px}
+  .kv span:last-child{color:var(--muted)}
+  .bar{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:12.5px}
+  .bar .nmh{width:120px;color:var(--muted);display:flex;align-items:center;gap:6px;flex:none}
+  .bar .track{flex:1;height:8px;background:#0e1218;border-radius:6px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:6px}
+  .bar .ct{width:24px;text-align:right;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:3px;flex:none}
+  .issue{font-size:12px;border-left:3px solid var(--warn);background:rgba(249,115,22,.07);
+    padding:6px 9px;border-radius:0 8px 8px 0;margin:6px 0;color:#fed7aa}
+  .issue.ok{border-color:var(--act);background:rgba(34,197,94,.07);color:#bbf7d0}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chips .c{font-size:11.5px;border:1px solid var(--line);border-radius:14px;padding:2px 9px;color:var(--muted);background:#0e1218}
+
+  /* steps view */
+  .steps{padding:18px;overflow:auto;flex:1}
+  .stepcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:0 auto 12px;max-width:760px;overflow:hidden;border-left:3px solid var(--c)}
+  .stepcard .sh{display:flex;align-items:center;gap:9px;padding:10px 14px;background:var(--panel2)}
+  .stepcard .sb{padding:11px 14px;display:flex;flex-direction:column;gap:9px}
+  .raw{padding:18px;overflow:auto;flex:1}
+  .raw pre{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;
+    font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:#cbd5e1;white-space:pre-wrap;word-break:break-word;max-width:1000px;margin:0 auto}
+  .hidden{display:none!important}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--muted)}
+  .legend .li{display:flex;align-items:center;gap:5px}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1c222c;border:1px solid var(--line);
+    color:var(--ink);padding:10px 16px;border-radius:10px;box-shadow:var(--shadow);z-index:50;font-size:13px;opacity:0;transition:.2s;pointer-events:none}
+  .toast.show{opacity:1}
+  input[type=file]{display:none}
+  a.link{color:#7dd3fc;text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>🤖 Kommo Salesbot Viewer <small>— export → fluxo legível</small></h1>
+  <div class="grow"></div>
+  <div class="seg" id="viewseg">
+    <button data-v="flow" class="on">Fluxo</button>
+    <button data-v="steps">Passos</button>
+    <button data-v="raw">JSON</button>
+  </div>
+  <button class="btn ghost" id="demoBtn">Ver exemplo</button>
+  <label class="btn primary" for="fileInput">📂 Abrir bot</label>
+  <input type="file" id="fileInput" accept=".json,application/json">
+</header>
+
+<div class="layout">
+  <aside class="side" id="side">
+    <div class="meta" id="meta">
+      <div class="nm" style="color:var(--muted)">Nenhum bot carregado</div>
+      <div style="color:var(--faint);font-size:12.5px;margin-top:6px">
+        Arraste um <code>.json</code> de export do Kommo aqui, ou clique em <b>Abrir bot</b> /
+        <b>Ver exemplo</b>.
+      </div>
+    </div>
+    <div id="sideBody" class="hidden">
+      <h2>Resumo</h2>
+      <div id="kvs"></div>
+      <h2>Handlers</h2>
+      <div id="hist"></div>
+      <h2>Canais & destinos</h2>
+      <div id="chips"></div>
+      <h2>Verificação</h2>
+      <div id="issues"></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="toolbar">
+      <div class="legend" id="legend"></div>
+      <div class="zoom">
+        <button class="btn" id="zout">−</button>
+        <span id="zlabel">100%</span>
+        <button class="btn" id="zin">+</button>
+        <button class="btn" id="zfit" title="Ajustar">⤢</button>
+      </div>
+    </div>
+
+    <div class="canvas" id="canvas">
+      <div class="drop" id="drop">
+        <div class="dz">
+          <div class="big">Solte o export do salesbot aqui</div>
+          <div>O viewer aceita o <b>wrapper de export</b> (com <code>model.text</code>/<code>model.positions</code> stringificados),
+          um <b>IR</b> já parseado, ou um <b>template</b> da skill (chave <code>lir</code>).</div>
+          <div style="margin-top:14px"><label class="btn primary" for="fileInput">Escolher arquivo</label>
+          &nbsp;<button class="btn" id="demoBtn2">ou ver exemplo</button></div>
+        </div>
+      </div>
+      <div class="stage" id="stage">
+        <svg class="edges" id="edges"></svg>
+      </div>
+    </div>
+
+    <div class="steps hidden" id="stepsView"></div>
+    <div class="raw hidden" id="rawView"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   Kommo Salesbot Viewer — single-file, no deps.
+   Decodes the export format documented in the salesbot-builder
+   skill (references/format.md) and renders it as a flow graph.
+   ============================================================ */
+
+// ---------- type catalog (color/icon/label per node kind) ----------
+const KIND = {
+  start:      {c:'--start',  ic:'▶', label:'Início'},
+  finish:     {c:'--finish', ic:'■', label:'Fim'},
+  send:       {c:'--send',   ic:'✉', label:'Enviar mensagem'},
+  wait:       {c:'--wait',   ic:'⏱', label:'Pausar / aguardar'},
+  wait_answer:{c:'--wait',   ic:'⏳', label:'Aguardar resposta'},
+  cond:       {c:'--cond',   ic:'◆', label:'Condição'},
+  dist:       {c:'--dist',   ic:'⇄', label:'Distribuir'},
+  trigger:    {c:'--trig',   ic:'⚡', label:'Gatilho (Pipeline Digital)'},
+  action:     {c:'--act',    ic:'✓', label:'Ação'},
+  startbot:   {c:'--startbot',ic:'🤖', label:'Iniciar outro bot'},
+  unknown:    {c:'--trig',   ic:'?', label:'Bloco'},
+};
+// handlers that mutate production data when the bot runs
+const PROD = new Set(['change_status','change_responsible_user','distribution',
+  'set_tag','unset_tag','change_conversation_status','trigger','set_custom_fields','start','subscribe','unsubscribe']);
+
+// ---------- input normalization ----------
+function parseBlob(b){ return (b && typeof b === 'object') ? b : JSON.parse(b); }
+
+function normalize(raw){
+  // accept: wrapper export | IR | template ({lir|ir|model})
+  let obj = raw;
+  if (obj.lir) obj = obj.lir;            // skill template
+  else if (obj.ir && !obj.model && !obj.text) obj = obj.ir;
+  let name, text, positions, tf, type;
+  if (obj.model){                         // export wrapper
+    name = obj.model.name; type = obj.model.type; tf = obj.type_functionality;
+    text = parseBlob(obj.model.text); positions = parseBlob(obj.model.positions);
+  } else if (obj.text && obj.positions){  // already IR
+    name = obj.name; type = obj.type; tf = obj.type_functionality;
+    text = parseBlob(obj.text); positions = parseBlob(obj.positions);
+  } else {
+    throw new Error('Formato não reconhecido: faltam model.text/positions ou text/positions.');
+  }
+  if (!Array.isArray(positions)) throw new Error('positions não é um array.');
+  if (typeof text !== 'object') throw new Error('text não é um objeto.');
+  return {name: name||'(sem nome)', type, type_functionality: tf, text, positions};
+}
+
+// ---------- helpers ----------
+function fmtDelay(s){
+  s = Number(s)||0;
+  if (s<=0) return '0s';
+  const d=Math.floor(s/86400), h=Math.floor(s%86400/3600), m=Math.floor(s%3600/60), sec=s%60;
+  const p=[]; if(d)p.push(d+'d'); if(h)p.push(h+'h'); if(m)p.push(m+'min'); if(sec&&!d&&!h)p.push(sec+'s');
+  return p.join(' ')||'0s';
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function withPlaceholders(s){ return esc(s).replace(/\{\{[^}]+\}\}/g,m=>`<span class="ph">${m}</span>`); }
+function opSym(op){ return ({'=':'=','!=':'≠','contains':'contém','not_contains':'não contém','>':'>','<':'<'}[op]||op||'?'); }
+function describeConds(conds, logic){   // for node body (HTML) — escaped
+  if(!Array.isArray(conds)||!conds.length) return '(sem critério)';
+  const parts = conds.map(c=>`${esc(c.term1)} ${opSym(c.operation)} “${esc(c.term2)}”`);
+  return parts.join(logic==='or'?' OU ':' E ');
+}
+function describeCondsRaw(conds, logic){ // for edge tooltip (textContent) — raw
+  if(!Array.isArray(conds)||!conds.length) return '(sem critério)';
+  return conds.map(c=>`${c.term1} ${opSym(c.operation)} “${c.term2}”`).join(logic==='or'?' OU ':' E ');
+}
+function describeCondsShort(conds, logic){ // edge label — lead with the discriminating value
+  if(!Array.isArray(conds)||!conds.length) return 'se';
+  return conds.map(c=>(c.operation&&c.operation!=='='?opSym(c.operation)+' ':'')+`“${c.term2}”`)
+              .join(logic==='or'?' / ':' + ');
+}
+
+// map a text step-id (number) -> positions block id
+function buildStepIndex(positions){
+  const byStep = new Map();
+  for(const b of positions){ if(b && typeof b.step==='number') byStep.set(b.step, b); }
+  return byStep;
+}
+
+// ---------- build graph model from text + positions ----------
+function buildModel(M){
+  const {text, positions} = M;
+  const byStep = buildStepIndex(positions);
+  const stepToBlock = s => { const b = byStep.get(Number(s)); return b ? b.id : null; };
+
+  // nodes = real blocks (drop the decorative static/trigger block)
+  const nodes = [];
+  const idSet = new Set();
+  for(const b of positions){
+    if(!b || typeof b!=='object') continue;
+    if(b.type==='static') continue;                 // decorative trigger box, no edges
+    if(b.id==null) continue;
+    idSet.add(b.id);
+    nodes.push({id:b.id, step:(typeof b.step==='number'?b.step:null), btype:b.type, raw:b});
+  }
+
+  // attach the rich handler info from text[step] to each node + compute kind/body/prod
+  const handlerCounts = {};
+  const channels = new Set(), statuses = new Set(), users = new Set(), bots = new Set();
+  let prodCount = 0;
+  for(const n of nodes){
+    n.handlers = [];
+    if(n.btype==='start'){ n.kind='start'; n.title=KIND.start.label; continue; }
+    if(n.btype==='finish'){ n.kind='finish'; n.title=KIND.finish.label; continue; }
+    const st = (n.step!=null) ? text[String(n.step)] : null;
+    const arrs = st ? [].concat(st.question||[], st.answer||[], st.finish||[]) : [];
+    for(const h of arrs){
+      if(!h||!h.handler) continue;
+      handlerCounts[h.handler]=(handlerCounts[h.handler]||0)+1;
+      if(h.handler==='goto') continue; // edges, not body
+      const info = humanize(h);
+      if(info){ n.handlers.push(info);
+        if(info.prod) prodCount++;
+        info.channels && info.channels.forEach(x=>channels.add(x));
+        if(info.statusId!=null) statuses.add(info.statusId);
+        if(info.userId!=null) users.add(info.userId);
+        if(info.botId!=null) bots.add(info.botId);
+      }
+    }
+    n.kind = dominantKind(n.handlers);
+    n.title = KIND[n.kind].label;
+  }
+
+  // ---- edges ----
+  const edges = []; const seen = new Set();
+  function addEdge(from,to,label,branch,full){
+    if(from==null||to==null) return;
+    if(!idSet.has(to)) return;            // dangling handled as issue elsewhere
+    const k = from+'->'+to;
+    if(seen.has(k)){ // upgrade label if we now have a better one
+      if(label){ const e=edges.find(e=>e.from===from&&e.to===to); if(e&&!e.label){ e.label=label; e.full=full||label; } }
+      return;
+    }
+    seen.add(k); edges.push({from,to,label:label||'',full:full||label||'',branch:!!branch});
+  }
+
+  // edges from the semantic side (text), resolved to block ids — gives rich labels
+  for(const key of Object.keys(text)){
+    if(key==='conversation'||key==='error') continue;
+    const st = text[key]; if(!st||typeof st!=='object') continue;
+    const fromId = stepToBlock(key);
+    const arrs = [].concat(st.question||[], st.answer||[], st.finish||[]);
+    let condSeen = false;   // a bare goto after conditions in the same step = the no-match fallback
+    for(const h of arrs){
+      const hd=h&&h.handler, p=(h&&h.params)||{};
+      if(hd==='conditions') condSeen = true;
+      if(hd==='goto'){ const lbl = p.type==='answer'?'resposta':(condSeen?'senão':''); addEdge(fromId, stepToBlock(p.step), lbl, condSeen); }
+      else if(hd==='waits'){
+        for(const c of (p.conditions||[])){
+          const ev=c.event||{}, ac=c.action||{};
+          let lbl='→';
+          if(ev.source==='timer') lbl='⏱ '+fmtDelay(ev.delay);
+          else if(ev.source==='message') lbl='💬 recebida';
+          else if(ev.source==='working-time') lbl='🕒 horário';
+          addEdge(fromId, stepToBlock(ac.step), lbl, true);
+        }
+      } else if(hd==='conditions'){
+        const full='se '+describeCondsRaw(p.conditions,p.logic);
+        const short=describeCondsShort(p.conditions,p.logic);
+        for(const r of (p.result||[])){ if(r&&r.handler==='goto') addEdge(fromId, stepToBlock(r.params.step), short, true, full); }
+      } else if(hd==='wait_answer'){ addEdge(fromId, stepToBlock(p.step), 'resposta', true); }
+      else if(hd==='distribution'){ (p.variants||[]).forEach((v,i)=>addEdge(fromId, stepToBlock(v&&v.step), 'variante '+(i+1), true)); }
+    }
+  }
+
+  // supplement from the visual side (positions) — start->first, fallbacks, anything text missed
+  for(const b of positions){
+    if(!b||typeof b!=='object'||b.id==null||b.type==='static') continue;
+    if(b.goto && b.goto.block!=null) addEdge(b.id, b.goto.block, b.type==='start'?'':'', false);
+    for(const a of (b.actions||[])){
+      for(const lk of (a.links||[])){
+        if(lk&&lk.block!=null){
+          // best-effort label from the action's own event
+          let lbl=''; const pp=a.params&&a.params.params;
+          if(pp&&pp.event){ const ev=pp.event;
+            if(ev.source==='timer') lbl='⏱ '+fmtDelay(ev.delay);
+            else if(ev.source==='message') lbl='💬 recebida';
+            else if(ev.source==='working-time') lbl='🕒 horário'; }
+          addEdge(b.id, lk.block, lbl, true);
+        }
+      }
+    }
+  }
+
+  // ---- issues (validate-lite, mirrors validate.py warnings) ----
+  const issues = [];
+  // gotos in text pointing to non-existent steps
+  for(const key of Object.keys(text)){
+    if(key==='conversation'||key==='error') continue;
+    const st=text[key]; if(!st||typeof st!=='object') continue;
+    const arrs=[].concat(st.question||[],st.answer||[],st.finish||[]);
+    for(const h of arrs){
+      const hd=h&&h.handler,p=(h&&h.params)||{};
+      const targets=[];
+      if(hd==='goto') targets.push(p.step);
+      if(hd==='waits') (p.conditions||[]).forEach(c=>targets.push(c.action&&c.action.step));
+      if(hd==='wait_answer') targets.push(p.step);
+      if(hd==='conditions') (p.result||[]).forEach(r=>r&&r.handler==='goto'&&targets.push(r.params.step));
+      for(const t of targets){ if(t!=null && !byStep.has(Number(t))) issues.push(`Step ${key}: goto aponta pro step ${t}, que não existe.`); }
+    }
+  }
+  // send_message não-inicial sem canal
+  for(const n of nodes){
+    for(const h of n.handlers){
+      if(h.handler==='send_message' && !h.initial && (!h.channels||!h.channels.length))
+        issues.push(`Step ${n.step}: "Enviar mensagem" sem canal (chat_source) e não é bloco inicial.`);
+    }
+  }
+  // exactly one start
+  const starts = nodes.filter(n=>n.btype==='start').length;
+  if(starts!==1) issues.push(`Esperado exatamente 1 bloco "Início" — encontrados ${starts}.`);
+  // change_status missing pipeline_id
+  for(const n of nodes) for(const h of n.handlers)
+    if(h.handler==='change_status' && h.missingPipeline) issues.push(`Step ${n.step}: "Mudar status" sem pipeline_id.`);
+
+  const stats = {
+    steps: nodes.filter(n=>n.btype!=='start'&&n.btype!=='finish').length,
+    nodes: nodes.length,
+    handlers: handlerCounts,
+    channels:[...channels], statuses:[...statuses], users:[...users], bots:[...bots],
+    prodCount, edges: edges.length,
+    hasTrigger: positions.some(b=>b&&b.type==='static'&&b.code==='trigger') || !!handlerCounts.trigger,
+  };
+  return {nodes, edges, idSet, stats, issues};
+}
+
+function dominantKind(handlers){
+  const has=h=>handlers.some(x=>x.handler===h);
+  if(has('conditions')) return 'cond';
+  if(has('waits')) return 'wait';
+  if(has('wait_answer')) return 'wait_answer';
+  if(has('distribution')) return 'dist';
+  if(has('start')) return 'startbot';
+  if(has('trigger')) return 'trigger';
+  if(has('send_message')) return 'send';
+  if(handlers.length) return 'action';
+  return 'unknown';
+}
+
+// turn one handler into a renderable {handler, icon, html, prod, channels,...}
+function humanize(h){
+  const p = h.params||{};
+  switch(h.handler){
+    case 'send_message':{
+      const ch = (p.chat_sources||[]).map(c=>c.id).filter(x=>x!=null);
+      let html = `<div class="msg">${withPlaceholders(p.text||'')||'<i style="color:var(--faint)">(sem texto)</i>'}</div>`;
+      const btns = [].concat(p.buttons||[], (p.buttons_url||[]));
+      if(btns.length){ html += `<div class="btns">`+btns.map(b=>`<span class="btnchip">${esc(typeof b==='string'?b:(b.text||b.title||'botão'))}</span>`).join('')+`</div>`; }
+      const meta = ch.length?`<div class="lbl" style="font-size:11px;margin-top:2px">canal ${ch.join(', ')}</div>`:'';
+      return {handler:'send_message', icon:'✉', label:'Enviar mensagem', html: html+meta,
+        prod:false, channels:ch, initial: p.is_in_starting_block===true};
+    }
+    case 'waits':{
+      const rows = (p.conditions||[]).map(c=>{
+        const ev=c.event||{}; let d;
+        if(ev.source==='timer') d=`espera ${fmtDelay(ev.delay)}`;
+        else if(ev.source==='message') d=`se receber mensagem`;
+        else if(ev.source==='working-time') d=`horário comercial`;
+        else d=ev.source||'?';
+        return `<div>• ${esc(d)} → step ${esc(c.action&&c.action.step)}</div>`;
+      }).join('');
+      return {handler:'waits', icon:'⏱', label:'Pausar', html: rows||'(sem condições)', prod:false};
+    }
+    case 'wait_answer':
+      return {handler:'wait_answer', icon:'⏳', label:'Aguardar resposta', html:`espera resposta → step ${esc(p.step)}`, prod:false};
+    case 'conditions':{
+      const expr=describeConds(p.conditions,p.logic);
+      return {handler:'conditions', icon:'◆', label:'', html:`<b>se</b> ${expr}`, prod:false};
+    }
+    case 'distribution':
+      return {handler:'distribution', icon:'⇄', label:'Distribuir (round-robin)', html:`distribui entre ${ (p.variants||[]).length || '?'} opções`, prod:true};
+    case 'trigger':{
+      const t=p.trigger||{}; const s=t.settings||{};
+      const what=t.action||t.handler_code||'ação';
+      const detail = s.task_text? ` — “${esc(s.task_text)}”`:'';
+      return {handler:'trigger', icon:'⚡', label:'Gatilho (Pipeline Digital)', html:`${esc(what)}${detail}`, prod:true};
+    }
+    case 'send_internal':
+      return {handler:'send_internal', icon:'🔔', label:'Notificação interna', html:`${withPlaceholders(p.message||'')}${p.user_id?` <span class="lbl">→ user ${esc(p.user_id)}</span>`:''}`, prod:false, userId:p.user_id};
+    case 'start':
+      return {handler:'start', icon:'🤖', label:'Iniciar bot', html:`inicia o bot <b>${esc(p.bot)}</b>`, prod:true, botId:p.bot};
+    case 'action': return action(p);
+    default:
+      return {handler:h.handler, icon:'•', label:h.handler, html:`<span class="lbl">${esc(JSON.stringify(p).slice(0,120))}</span>`, prod:PROD.has(h.handler)};
+  }
+}
+
+function action(p){
+  const name = p.name; const pr = p.params||{};
+  switch(name){
+    case 'change_status':
+      return {handler:'change_status', icon:'🏷', label:'Mudar status', prod:true,
+        statusId:pr.value, missingPipeline: pr.pipeline_id==null,
+        html:`→ etapa <b>${esc(pr.value)}</b> <span class="lbl">(pipeline ${esc(pr.pipeline_id)})</span>`};
+    case 'change_responsible_user':
+      return {handler:'change_responsible_user', icon:'👤', label:'Mudar responsável', prod:true, userId:pr.value,
+        html:`responsável → <b>user ${esc(pr.value)}</b>`};
+    case 'set_custom_fields':{
+      const ref = pr.custom_fields_id!=null ? `CF ${pr.custom_fields_id}` : esc(pr.custom_field||'CF');
+      return {handler:'set_custom_fields', icon:'📝', label:'Preencher campo', prod:true,
+        html:`${ref} = <b>${withPlaceholders(pr.value)}</b>`};
+    }
+    case 'set_tag': case 'unset_tag':
+      return {handler:name, icon:'🔖', label:(name==='set_tag'?'Adicionar tag':'Remover tag'), prod:true,
+        html:`${esc(pr.value)}`};
+    case 'change_conversation_status':
+      return {handler:'change_conversation_status', icon:'💬', label:'Status da conversa', prod:true,
+        html:`${esc(pr.status_action||'')}`};
+    default:
+      return {handler:name||'action', icon:'⚙', label:name||'Ação', prod:PROD.has(name),
+        html:`<span class="lbl">${esc(JSON.stringify(pr).slice(0,120))}</span>`};
+  }
+}
+
+// ---------- layout (layered LEFT-TO-RIGHT, BFS depth = column) ----------
+// LTR matches how Kommo itself draws bots and, crucially, makes a fan-out
+// (1 condition -> N branches) spread VERTICALLY so edge labels never collide.
+function layout(model){
+  const {nodes, edges} = model;
+  const byId = new Map(nodes.map(n=>[n.id,n]));
+  const children = new Map(nodes.map(n=>[n.id,[]]));
+  const parents  = new Map(nodes.map(n=>[n.id,[]]));
+  for(const e of edges){ if(children.has(e.from)&&byId.has(e.to)){ children.get(e.from).push(e.to); parents.get(e.to).push(e.from); } }
+  const start = nodes.find(n=>n.btype==='start') || nodes[0];
+  const layer = new Map();
+  if(start){
+    const q=[[start.id,0]]; layer.set(start.id,0);
+    while(q.length){ const [id,L]=q.shift();
+      for(const c of (children.get(id)||[])){ if(!layer.has(c)){ layer.set(c,L+1); q.push([c,L+1]); } }
+    }
+  }
+  let maxL=0; layer.forEach(v=>maxL=Math.max(maxL,v));
+  for(const n of nodes){ if(!layer.has(n.id)){ maxL++; layer.set(n.id,maxL); } } // orphans last
+  // columns, stable order = node order
+  const cols=[];
+  for(const n of nodes){ const L=layer.get(n.id); (cols[L]=cols[L]||[]).push(n.id); }
+  // crossing reduction: order each column by the mean order of its parents in the prev column
+  const ord=new Map();
+  cols.forEach((col,ci)=>{
+    if(!col) return;
+    if(ci>0){
+      const bary=id=>{ const ps=parents.get(id).filter(p=>ord.has(p));
+        return ps.length ? ps.reduce((s,p)=>s+ord.get(p),0)/ps.length : 1e6; };
+      col.sort((a,b)=>bary(a)-bary(b));
+    }
+    col.forEach((id,i)=>ord.set(id,i));
+  });
+  for(const n of nodes) n.layer=layer.get(n.id);
+  return {cols, byId};
+}
+
+// ---------- render flow ----------
+const NODE_W=288, MINI_W=188, COL_GAP=120, V_GAP=30, PAD=60;
+let STATE=null, ZOOM=1;
+
+function renderFlow(model){
+  const {cols, byId} = layout(model);
+  const stage = document.getElementById('stage');
+  const svg = document.getElementById('edges');
+  [...stage.querySelectorAll('.node')].forEach(n=>n.remove());
+
+  // create nodes (provisional) to measure heights
+  const elFor=new Map();
+  cols.forEach(col=>{ if(!col) return; col.forEach(id=>{
+    const n=byId.get(id);
+    const el=document.createElement('div');
+    el.className='node'+((n.btype==='start'||n.btype==='finish')?' mini':'');
+    el.style.setProperty('--c', `var(${KIND[n.kind].c})`);
+    el.innerHTML = nodeHTML(n);
+    stage.appendChild(el); elFor.set(id, el);
+  });});
+
+  // column heights -> vertically center each column against the tallest
+  const colH = cols.map(col=> col ? col.reduce((s,id)=>s+elFor.get(id).offsetHeight+V_GAP,-V_GAP) : 0);
+  const maxColH = Math.max(0, ...colH);
+
+  const pos=new Map(); let stageW=PAD;
+  cols.forEach((col,ci)=>{ if(!col) return;
+    const colX = PAD + ci*(NODE_W+COL_GAP);
+    let y = PAD + (maxColH - colH[ci])/2;
+    col.forEach(id=>{
+      const el=elFor.get(id); const isMini=el.classList.contains('mini');
+      const nw=isMini?MINI_W:NODE_W; const h=el.offsetHeight;
+      const x = colX + (NODE_W-nw)/2;
+      el.style.left=x+'px'; el.style.top=y+'px';
+      pos.set(id,{x,y,w:nw,h}); y += h + V_GAP;
+    });
+    stageW = colX + NODE_W;
+  });
+  stageW += PAD;
+  const stageH = PAD*2 + maxColH;
+
+  stage.style.width=stageW+'px'; stage.style.height=stageH+'px';
+  svg.setAttribute('width', stageW); svg.setAttribute('height', stageH);
+  drawEdges(svg, model.edges, pos);
+  fit();
+}
+
+function nodeHTML(n){
+  const k=KIND[n.kind];
+  const badge = n.step!=null ? `step ${n.step}` : (n.btype==='start'?'':'');
+  let body='';
+  if(n.btype==='start') body=`<div class="hline"><span class="htx lbl">disparo do bot</span></div>`;
+  else if(n.btype==='finish') body=`<div class="hline"><span class="htx lbl">encerra o bot</span></div>`;
+  else if(!n.handlers.length) body=`<div class="hline"><span class="htx lbl">—</span></div>`;
+  else body = n.handlers.map(h=>{
+      const head = (h.label||h.prod)
+        ? `<span class="lbl">${esc(h.label)}${h.prod?' <span class="prodflag">⚠ produção</span>':''}</span><br>` : '';
+      return `<div class="hline"><span class="hic">${h.icon}</span><span class="htx">${head}${h.html}</span></div>`;
+    }).join('');
+  return `<div class="nh"><span class="ic">${k.ic}</span><span class="tt">${esc(n.title)}</span>${badge?`<span class="badge">${badge}</span>`:''}</div>
+          <div class="nb">${body}</div>`;
+}
+
+const SVGNS='http://www.w3.org/2000/svg';
+function drawLabel(svg, x, y, label, full){
+  const MAX=26;
+  const show = label.length>MAX ? label.slice(0,MAX-1)+'…' : label;
+  const tw = show.length*6.1+12;
+  const bg=document.createElementNS(SVGNS,'rect');
+  bg.setAttribute('x',x-tw/2);bg.setAttribute('y',y-9);bg.setAttribute('width',tw);bg.setAttribute('height',18);
+  bg.setAttribute('rx',9);bg.setAttribute('class','edge-label-bg');
+  svg.appendChild(bg);
+  const t=document.createElementNS(SVGNS,'text');
+  t.setAttribute('x',x);t.setAttribute('y',y+4);t.setAttribute('text-anchor','middle');
+  t.setAttribute('class','edge-label');t.textContent=show;
+  const tip = full||label;
+  if(tip && tip!==show){ const ti=document.createElementNS(SVGNS,'title'); ti.textContent=tip; t.appendChild(ti); }
+  svg.appendChild(t);
+}
+function drawEdges(svg, edges, pos){
+  svg.innerHTML = `<defs>
+    <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#475569"/></marker>
+    <marker id="arwb" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#7c5cff"/></marker>
+  </defs>`;
+  for(const e of edges){
+    const a=pos.get(e.from), b=pos.get(e.to); if(!a||!b) continue;
+    const sx=a.x+a.w, sy=a.y+a.h/2, tx=b.x, ty=b.y+b.h/2;   // right-center -> left-center
+    const fwd = tx >= sx-24;
+    let d, lx, ly;
+    if(fwd){
+      const dx=Math.max(40,(tx-sx)/2);
+      d=`M${sx},${sy} C${sx+dx},${sy} ${tx-dx},${ty} ${tx},${ty}`;
+      lx=sx+(tx-sx)*0.5; ly=sy+(ty-sy)*0.5;
+    } else {
+      // back-edge (loop): bow downward, bottom-center -> bottom-center
+      const sxb=a.x+a.w/2, syb=a.y+a.h, txb=b.x+b.w/2, tyb=b.y+b.h;
+      const dip=Math.max(syb,tyb)+46;
+      d=`M${sxb},${syb} C${sxb},${dip} ${txb},${dip} ${txb},${tyb}`;
+      lx=(sxb+txb)/2; ly=dip-2;
+    }
+    const path=document.createElementNS(SVGNS,'path');
+    path.setAttribute('d',d); path.setAttribute('fill','none');
+    path.setAttribute('stroke', e.branch?'#7c5cff':'#475569');
+    path.setAttribute('stroke-width', e.branch?'1.7':'1.5');
+    if(e.branch) path.setAttribute('stroke-dasharray','5 4');
+    path.setAttribute('marker-end', e.branch?'url(#arwb)':'url(#arw)');
+    svg.appendChild(path);
+    if(e.label) drawLabel(svg, lx, ly, e.label, e.full);
+  }
+}
+
+// ---------- sidebar ----------
+function renderSide(M, model){
+  document.getElementById('meta').innerHTML =
+    `<div class="nm">${esc(M.name)}</div>
+     <div style="color:var(--faint);font-size:12px;margin-top:2px">type ${esc(M.type)} · type_functionality ${esc(M.type_functionality)}</div>`;
+  document.getElementById('sideBody').classList.remove('hidden');
+
+  const s=model.stats;
+  document.getElementById('kvs').innerHTML =
+    [['Passos lógicos',s.steps],['Blocos no grafo',s.nodes],['Conexões',s.edges],
+     ['Ações em produção', s.prodCount + (s.prodCount?' ⚠':'')],
+     ['Gatilho', s.hasTrigger?'sim':'—']]
+    .map(([k,v])=>`<div class="kv"><span>${k}</span><span>${v}</span></div>`).join('');
+
+  // handler histogram
+  const ents=Object.entries(s.handlers).filter(([k])=>k!=='goto').sort((a,b)=>b[1]-a[1]);
+  const max=Math.max(1,...ents.map(e=>e[1]));
+  const colorOf=h=>({send_message:'--send',waits:'--wait',wait_answer:'--wait',conditions:'--cond',
+    distribution:'--dist',trigger:'--trig',action:'--act',send_internal:'--act',start:'--startbot'}[h]||'--faint');
+  document.getElementById('hist').innerHTML = ents.length? ents.map(([h,c])=>`
+    <div class="bar"><span class="nmh"><span class="dot" style="background:var(${colorOf(h)})"></span>${esc(h)}</span>
+      <span class="track"><span class="fill" style="width:${c/max*100}%;background:var(${colorOf(h)})"></span></span>
+      <span class="ct">${c}</span></div>`).join('') : '<div style="color:var(--faint)">—</div>';
+
+  const chip=(arr,lbl)=>arr.length?`<div style="margin-bottom:6px"><div class="lbl" style="font-size:11px;margin-bottom:3px">${lbl}</div><div class="chips">${arr.map(x=>`<span class="c">${esc(x)}</span>`).join('')}</div></div>`:'';
+  const chipsHtml = chip(s.channels,'Canais (chat_source)')+chip(s.statuses,'Status tocados')+chip(s.users,'Usuários')+chip(s.bots,'Bots encadeados');
+  document.getElementById('chips').innerHTML = chipsHtml || '<div style="color:var(--faint)">nenhum id de conta referenciado</div>';
+
+  document.getElementById('issues').innerHTML = model.issues.length
+    ? model.issues.map(i=>`<div class="issue">${esc(i)}</div>`).join('')
+    : `<div class="issue ok">✓ Sem inconsistências estruturais óbvias.<br><span style="opacity:.8">Checagem leve — não substitui <code>validate.py --inventory</code> contra a conta-alvo.</span></div>`;
+}
+
+// ---------- steps view ----------
+function renderSteps(model){
+  const v=document.getElementById('stepsView');
+  const ordered=[...model.nodes].sort((a,b)=>(a.layer-b.layer)||((a.step??1e9)-(b.step??1e9)));
+  v.innerHTML = ordered.map(n=>{
+    const k=KIND[n.kind];
+    const body = n.btype==='start'?'<span class="lbl">disparo do bot</span>'
+      : n.btype==='finish'?'<span class="lbl">encerra o bot</span>'
+      : (n.handlers.map(h=>`<div class="hline"><span class="hic">${h.icon}</span><span class="htx"><span class="lbl">${esc(h.label)}${h.prod?' <span class="prodflag">⚠ produção</span>':''}</span><br>${h.html}</span></div>`).join('')||'<span class="lbl">—</span>');
+    const outs=model.edges.filter(e=>e.from===n.id).map(e=>`→ bloco ${e.to}${e.label?` <span class="lbl">(${esc(e.label)})</span>`:''}`).join(' &nbsp; ');
+    return `<div class="stepcard" style="--c:var(${k.c})">
+      <div class="sh"><span class="ic" style="--c:var(${k.c});background:color-mix(in srgb,var(${k.c}) 22%,transparent);color:var(${k.c});width:22px;height:22px;border-radius:6px;display:grid;place-items:center">${k.ic}</span>
+        <b>${esc(n.title)}</b>
+        <span class="badge" style="margin-left:auto">bloco ${n.id}${n.step!=null?` · step ${n.step}`:''}</span></div>
+      <div class="sb">${body}${outs?`<div style="border-top:1px dashed #232b36;padding-top:8px;color:var(--muted);font-size:12px">${outs}</div>`:''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ---------- zoom / fit ----------
+function applyZoom(){ document.getElementById('stage').style.transform=`scale(${ZOOM})`;
+  document.getElementById('zlabel').textContent=Math.round(ZOOM*100)+'%'; }
+function fit(){
+  const stage=document.getElementById('stage'), canvas=document.getElementById('canvas');
+  const sw=parseFloat(stage.style.width)||stage.offsetWidth;
+  const sh=parseFloat(stage.style.height)||stage.offsetHeight;
+  const z=Math.min((canvas.clientWidth-24)/sw, (canvas.clientHeight-24)/sh, 1);
+  ZOOM=Math.max(0.35, z);
+  applyZoom();
+}
+
+// ---------- view switching ----------
+function setView(v){
+  document.querySelectorAll('#viewseg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  document.getElementById('canvas').classList.toggle('hidden', v!=='flow');
+  document.querySelector('.toolbar').classList.toggle('hidden', v!=='flow');
+  document.getElementById('stepsView').classList.toggle('hidden', v!=='steps');
+  document.getElementById('rawView').classList.toggle('hidden', v!=='raw');
+}
+
+// ---------- load ----------
+function legend(){
+  const items=[['send','Mensagem'],['wait','Pausa'],['cond','Condição'],['dist','Distribuir'],['action','Ação'],['trigger','Gatilho'],['finish','Fim']];
+  document.getElementById('legend').innerHTML = items.map(([k,l])=>`<span class="li"><span class="dot" style="background:var(${KIND[k].c})"></span>${l}</span>`).join('')
+    + `<span class="li" style="margin-left:6px"><svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="#7c5cff" stroke-width="1.7" stroke-dasharray="5 4"/></svg>branch</span>`;
+}
+
+function load(raw, srcName){
+  let M, model;
+  try{ M=normalize(raw); model=buildModel(M); }
+  catch(e){ toast('Erro: '+e.message); console.error(e); return; }
+  STATE={M,model};
+  document.getElementById('drop').classList.add('hide');
+  legend();
+  renderFlow(model);
+  renderSide(M, model);
+  renderSteps(model);
+  document.getElementById('rawView').innerHTML='<pre>'+esc(JSON.stringify({name:M.name,type:M.type,text:M.text,positions:M.positions},null,2))+'</pre>';
+  toast(`Carregado: ${M.name} — ${model.stats.nodes} blocos, ${model.stats.edges} conexões`+(srcName?` (${srcName})`:''));
+}
+
+function handleFile(file){
+  const r=new FileReader();
+  r.onload=()=>{ try{ load(JSON.parse(r.result), file.name); }catch(e){ toast('JSON inválido: '+e.message); } };
+  r.readAsText(file);
+}
+
+// ---------- events ----------
+let toastT;
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),3200); }
+
+document.getElementById('fileInput').addEventListener('change',e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+document.getElementById('viewseg').addEventListener('click',e=>{ if(e.target.dataset.v) setView(e.target.dataset.v); });
+document.getElementById('zin').onclick=()=>{ZOOM=Math.min(1.8,ZOOM+0.1);applyZoom();};
+document.getElementById('zout').onclick=()=>{ZOOM=Math.max(0.3,ZOOM-0.1);applyZoom();};
+document.getElementById('zfit').onclick=fit;
+document.getElementById('demoBtn').onclick=()=>load(DEMO,'exemplo embutido');
+document.getElementById('demoBtn2').onclick=()=>load(DEMO,'exemplo embutido');
+
+const canvas=document.getElementById('canvas'), drop=document.getElementById('drop');
+['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();if(ev!=='drop')drop.classList.remove('over');}));
+document.addEventListener('drop',e=>{ drop.classList.remove('over');
+  const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+window.addEventListener('resize',()=>{ if(STATE) fit(); });
+
+// ---------- embedded demo bot (IR form — showcases branches) ----------
+const DEMO = {
+  name: "Exemplo · Boas-vindas + qualificação",
+  type: 2, type_functionality: 0,
+  text: {
+    "0": { question:[
+      {handler:"send_message", params:{ text:"Olá {{contact.first_name}}! 👋 Vi que você se interessou pelo curso. Quer que eu te mande os detalhes agora?",
+        type:"external", on_error:null, recipient:{type:"all_contacts",way_of_communication:"over_all"},
+        chat_sources:[{id:11111}], buttons:["Quero sim","Agora não"], is_in_starting_block:true, create_chat_if_not_exists:true}},
+      {handler:"goto", params:{step:1,type:"question"}}
+    ], block_uuid:"a1"},
+    "1": { question:[
+      {handler:"waits", params:{logic:"or", conditions:[
+        {event:{action:"received",source:"message"}, action:{step:2,type:"question"}},
+        {event:{delay:86400,action:"ended",source:"timer"}, action:{step:5,type:"question"}}
+      ]}}
+    ], block_uuid:"b2"},
+    "2": { question:[
+      {handler:"conditions", params:{logic:"and",
+        conditions:[{term1:"{{message_text}}",term2:"sim",operation:"contains",value_type:"custom_value"}],
+        result:[{handler:"goto",params:{step:3,type:"question"}}]}},
+      {handler:"goto", params:{step:5,type:"question"}}
+    ], block_uuid:"c3"},
+    "3": { question:[
+      {handler:"send_message", params:{text:"Perfeito! 🎯 Já vou te conectar com um consultor.", type:"external", on_error:null,
+        recipient:{type:"all_contacts",way_of_communication:"over_all"}, chat_sources:[{id:11111}], is_in_starting_block:false, create_chat_if_not_exists:true}},
+      {handler:"action", params:{name:"change_status", params:{value:88123, pipeline_id:7042}}},
+      {handler:"action", params:{name:"change_responsible_user", params:{value:9931, type:1}}},
+      {handler:"send_internal", params:{message:"🔥 Lead quente: {{lead.name}}", entity_id:"{{lead.id}}", entity_type:2, user_id:9931}},
+      {handler:"goto", params:{step:4,type:"finish"}}
+    ], block_uuid:"d4"},
+    "5": { question:[
+      {handler:"send_message", params:{text:"Sem problemas! Quando quiser é só me chamar por aqui. 🙂", type:"external", on_error:null,
+        recipient:{type:"all_contacts",way_of_communication:"over_all"}, chat_sources:[{id:11111}], is_in_starting_block:false, create_chat_if_not_exists:true}},
+      {handler:"action", params:{name:"set_tag", params:{type:1, value:"frio"}}},
+      {handler:"goto", params:{step:4,type:"finish"}}
+    ], block_uuid:"e5"},
+    conversation:false
+  },
+  positions: [
+    {id:0, goto:{block:10}, step:-1, type:"start", actions:[{id:-3,sort:0,links:[],params:{params:[],handler:"_start"}}]},
+    {id:-1, code:"trigger", step:-1, type:"static", actions:[]},
+    {id:10, goto:{block:11}, name:"Enviar mensagem", step:0, type:"question",
+      actions:[{id:51,sort:0,links:[],params:{params:{},handler:"send_message"}}], block_uuid:"a1"},
+    {id:11, name:"Pausar", step:1, type:"question",
+      actions:[
+        {id:52,sort:0,links:[{block:12}],params:{params:{event:{action:"received",source:"message"}},handler:"wait"}},
+        {id:53,sort:1,links:[{block:15}],params:{params:{event:{delay:86400,action:"ended",source:"timer"}},handler:"wait"}}
+      ], block_uuid:"b2"},
+    {id:12, goto:{block:15}, name:"Condição", step:2, type:"question",
+      actions:[{id:54,sort:0,links:[{block:13}],params:{params:{result:[]},handler:"conditions"}}], block_uuid:"c3"},
+    {id:13, goto:{block:14}, name:"Enviar mensagem", step:3, type:"question",
+      actions:[{id:55,sort:0,links:[],params:{params:{},handler:"send_message"}}], block_uuid:"d4"},
+    {id:15, goto:{block:14}, name:"Enviar mensagem", step:5, type:"question",
+      actions:[{id:56,sort:0,links:[],params:{params:{},handler:"send_message"}}], block_uuid:"e5"},
+    {id:14, step:4, type:"finish", actions:[{id:65,sort:0,links:[],params:{params:[],handler:"_stop"}}]}
+  ]
+};
+</script>
+</body>
+</html>

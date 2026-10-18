@@ -1,0 +1,13 @@
+{
+  "widget": {
+    "name": "Sources manager",
+    "short_description": "Creates and lists registered lead sources.",
+    "description": "Creates, lists and deletes the integration's lead sources, so leads from forms and automations can be attributed to a specific source."
+  },
+  "advanced": {
+    "title": "Sources manager — Settings"
+  },
+  "settings": {
+    "source_name": "Default source name"
+  }
+}
