@@ -26,7 +26,7 @@
       "source": "./",
       "strict": false,
       "description": "Prepare the workspace so Claude can operate real apps: a verified map of your account (accounts, IDs, fields, conventions, payloads, rules) that Claude reads before acting, instead of learning by trial and error mid-task.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "productivity",
       "keywords": [
         "references",
