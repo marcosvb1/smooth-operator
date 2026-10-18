@@ -432,7 +432,7 @@ POST /{ad_id}/copies
 **Solução:** Usar `instagram_user_id` no lugar.
 
 ### Asset feed sem tipo de ação
-**Solução:** Usar `link_data` simples, depois editar no Ads Manager.
+**Solução:** Declarar `call_to_action_types` no `asset_feed_spec` e, na dúvida sobre o shape, ler o `asset_feed_spec` de um creative ativo do mesmo formato. Não edite no Ads Manager para contornar: isso cria creative novo e o `url_tags` some.
 
 ### Naming conflict em adset
 **Solução:** Sempre consultar adsets existentes via API antes de criar.

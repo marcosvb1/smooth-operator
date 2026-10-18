@@ -13,12 +13,25 @@
       "name": "ads-ops",
       "source": "./plugins/ads-ops",
       "description": "Operação de Meta Ads e TikTok Ads com dry-run e criação pausada, para qualquer conta configurada.",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "category": "marketing",
       "keywords": [
         "meta-ads",
         "tiktok-ads",
         "midia-paga"
+      ]
+    },
+    {
+      "name": "kommo",
+      "source": "./plugins/kommo",
+      "description": "Operação do Kommo CRM com gates de aprovação, relatórios de funil, redesenho de pipeline, Salesbots validados e widgets, para qualquer conta configurada.",
+      "version": "0.1.0",
+      "category": "sales",
+      "keywords": [
+        "kommo",
+        "crm",
+        "salesbot",
+        "pipeline"
       ]
     },
     {
