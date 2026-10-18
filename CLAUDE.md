@@ -36,6 +36,8 @@ Cada hook recebe `($, e, next)`: `$` é a API do engine, `e` é o evento e `next
 
 Para checar: `claude plugin validate <mod>`, `tsc -p <mod>` e `claude plugin test <mod>` (com testes `*.test.ts`).
 
+Guia de estudo completo (eventos, API, interface, limites, regras da análise estática): `docs/mods.md`.
+
 Mods criados numa sessão na nuvem ficam no container e somem quando a sessão acaba, então commite-os neste repo.
 
 ## Antes de commitar
