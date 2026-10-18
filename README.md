@@ -1,4 +1,4 @@
-# agent-tools
+# smooth-operator
 
 Skills, plugins and mods for Claude: reusable tools, workflows and extensions that expand what Claude can do across projects.
 
@@ -20,10 +20,10 @@ This repo works as a Claude Code plugin marketplace.
 ## Install
 
 ```bash
-/plugin marketplace add marcosvb1/agent-tools
-/plugin install <plugin>@agent-tools
+/plugin marketplace add marcosvb1/smooth-operator
+/plugin install <plugin>@smooth-operator
 ```
 
-Example: `/plugin install mise-en-place@agent-tools`.
+Example: `/plugin install mise-en-place@smooth-operator`.
 
-Per project: `claude plugin install <plugin>@agent-tools --scope project`.
+Per project: `claude plugin install <plugin>@smooth-operator --scope project`.

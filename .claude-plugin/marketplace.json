@@ -1,11 +1,11 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "agent-tools",
+  "name": "smooth-operator",
   "owner": {
     "name": "marcosvb1"
   },
   "metadata": {
-    "description": "Claude skills, plugins and mods developed in marcosvb1/agent-tools.",
+    "description": "Claude skills, plugins and mods developed in marcosvb1/smooth-operator.",
     "version": "0.1.0"
   },
   "plugins": [

@@ -41,8 +41,8 @@ Every fact is tagged `verified:YYYY-MM-DD`, `docs` or `inferred`, so Claude know
 ## Use it
 
 ```
-/plugin marketplace add marcosvb1/agent-tools
-/plugin install mise-en-place@agent-tools
+/plugin marketplace add marcosvb1/smooth-operator
+/plugin install mise-en-place@smooth-operator
 ```
 
 Then ask: "do the mise en place for Stripe", "map our Notion workspace before we use it", "update the Jira map".

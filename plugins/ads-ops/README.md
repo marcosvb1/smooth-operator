@@ -11,8 +11,8 @@ Operação de mídia paga no Meta Ads e no TikTok Ads, para qualquer conta.
 ## Instalação
 
 ```bash
-/plugin marketplace add marcosvb1/agent-tools
-/plugin install ads-ops@agent-tools
+/plugin marketplace add marcosvb1/smooth-operator
+/plugin install ads-ops@smooth-operator
 ```
 
 ## Configuração
