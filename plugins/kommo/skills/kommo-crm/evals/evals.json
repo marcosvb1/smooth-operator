@@ -1,0 +1,52 @@
+{
+  "skill_name": "kommo-crm",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Quanto lead tem em cada etapa do funil comercial do perfil cliente-a? Quero JSON, CSV e um resumo, sem alterar nada no Kommo.",
+      "expected_output": "Seleciona o modo relatório read-only, resolve o perfil cliente-a e o pipeline pelo nome (perguntando se houver mais de um candidato), pagina todas as etapas e não pede aprovação para GET.",
+      "files": [],
+      "assertions": [
+        "Classifica o pedido como relatório read-only",
+        "Usa o perfil informado e resolve o pipeline_id pela API ou pergunta, sem inventar ID",
+        "Exige paginação completa antes de declarar cobertura",
+        "Não solicita aprovação para chamadas GET"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Organiza as etapas duplicadas do funil de vendas, cria hints melhores e limpa as etapas mortas.",
+      "expected_output": "Seleciona pipeline design, coleta snapshot e volumes primeiro, apresenta proposta e payload final antes de qualquer escrita, migra leads antes de excluir etapas e faz readback.",
+      "files": [],
+      "assertions": [
+        "Classifica o pedido como pipeline design",
+        "Faz snapshot inicial antes de propor alterações",
+        "Materializa proposta e payload antes de pedir confirmação",
+        "Migra leads e confirma origem vazia antes de DELETE",
+        "Inclui readback após cada mutação"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Move o lead 1000001 para a etapa 2000002 no pipeline 3000003.",
+      "expected_output": "Seleciona operação pontual, pergunta o perfil se houver mais de um configurado, mostra endpoint e payload final, aguarda confirmação e prevê readback de pipeline_id e status_id.",
+      "files": [],
+      "assertions": [
+        "Classifica o pedido como operação pontual",
+        "Não executa o PATCH antes de confirmação explícita",
+        "Mostra o payload final com IDs e endpoint",
+        "Prevê readback de pipeline_id e status_id"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Adapta este Salesbot do Kommo para a conta do cliente-b e me entrega o JSON import-ready.",
+      "expected_output": "Encaminha para kommo-salesbot-builder e não tenta tratar Salesbot como CRUD, relatório ou pipeline design.",
+      "files": [],
+      "assertions": [
+        "Encaminha o pedido para kommo-salesbot-builder",
+        "Não usa os modos internos de relatório ou pipeline design"
+      ]
+    }
+  ]
+}

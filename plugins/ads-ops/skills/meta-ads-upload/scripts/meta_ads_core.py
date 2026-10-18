@@ -209,7 +209,8 @@ class MetaAdsClient:
                 )
             except requests.RequestException as exc:
                 last_error = str(exc).replace(self.context.access_token, "***")
-                if attempt < self.max_retries:
+                # Só GET repete sozinho: um POST que deu timeout pode ter gravado.
+                if is_get and attempt < self.max_retries:
                     time.sleep(attempt)
                     continue
                 raise MetaAdsError(f"Network error for {path}: {last_error}") from exc
@@ -230,7 +231,7 @@ class MetaAdsClient:
             err_message = err.get("message", response.text[:400])
             last_error = f"{response.status_code} {err_message}"
             retriable = response.status_code in {429, 500, 502, 503, 504}
-            if retriable and attempt < self.max_retries:
+            if retriable and method.upper() == "GET" and attempt < self.max_retries:
                 time.sleep(attempt)
                 continue
             raise MetaAdsError(f"Meta API error on {path}: {last_error}")
@@ -332,7 +333,7 @@ class MetaAdsClient:
         billing_event: str,
         targeting: dict[str, Any],
         promoted_object: dict[str, Any] | None = None,
-        bid_strategy: str = "LOWEST_COST_WITHOUT_CAP",
+        bid_strategy: str | None = None,
         status: str = "PAUSED",
     ) -> str:
         params: dict[str, Any] = {
@@ -341,10 +342,12 @@ class MetaAdsClient:
             "daily_budget": str(daily_budget),
             "optimization_goal": optimization_goal,
             "billing_event": billing_event,
-            "bid_strategy": bid_strategy,
             "targeting": json.dumps(targeting),
             "status": status,
         }
+        if bid_strategy:
+            # Em CBO a estratégia fica na campanha e o ad set não pode repetir.
+            params["bid_strategy"] = bid_strategy
         if promoted_object:
             params["promoted_object"] = json.dumps(promoted_object)
 
@@ -471,6 +474,14 @@ class MetaAdsClient:
                     "body_label": {"name": "body_default"},
                     "link_url_label": {"name": "link_default"},
                     "priority": 2,
+                },
+                {
+                    # Catch-all: sem ele, os demais placements ficam a critério da Meta.
+                    "customization_spec": {},
+                    "image_label": {"name": "img_feed"},
+                    "body_label": {"name": "body_default"},
+                    "link_url_label": {"name": "link_default"},
+                    "priority": 3,
                 },
             ],
         }

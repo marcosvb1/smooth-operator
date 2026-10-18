@@ -1,6 +1,6 @@
 {
   "name": "ads-ops",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Operação de mídia paga no Meta Ads e no TikTok Ads: criar, duplicar, atualizar e auditar campanhas com dry-run e criação pausada, para qualquer conta configurada.",
   "author": {
     "name": "marcosvb1"

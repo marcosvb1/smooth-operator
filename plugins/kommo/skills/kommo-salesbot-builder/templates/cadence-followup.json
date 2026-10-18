@@ -1,0 +1,572 @@
+{
+  "meta": {
+    "name": "cadence-followup",
+    "pattern": "message -> wait(timer|reply) -> reminder -> wait -> branch (status / tag)",
+    "description": "Cadência de follow-up: espera resposta por um tempo; se não responder, manda lembrete e espera de novo; ramifica entre 'sem resposta' (muda status) e 'respondeu' (marca campo).",
+    "source_bot": "cadence-followup.source.json",
+    "channels": [
+      "whatsapp"
+    ]
+  },
+  "slots": [
+    {
+      "name": "bot_name",
+      "kind": "text",
+      "required": true,
+      "hint": "nome do bot"
+    },
+    {
+      "name": "reminder_text",
+      "kind": "text",
+      "required": true,
+      "hint": "texto do lembrete enviado se o lead não responder no 1º prazo"
+    },
+    {
+      "name": "chat_source_1",
+      "kind": "chat_source",
+      "required": true,
+      "sentinel": -901,
+      "hint": "canal verificado #1"
+    },
+    {
+      "name": "chat_source_2",
+      "kind": "chat_source",
+      "required": true,
+      "sentinel": -902,
+      "hint": "canal verificado #2; use o mesmo id de #1 se só houver 1 canal"
+    },
+    {
+      "name": "delay_reattempt_s",
+      "kind": "delay",
+      "required": true,
+      "sentinel": -911,
+      "hint": "segundos antes do lembrete (ex.: 7200 = 2h)"
+    },
+    {
+      "name": "delay_followup_s",
+      "kind": "delay",
+      "required": true,
+      "sentinel": -912,
+      "hint": "segundos de espera após o lembrete (ex.: 86400 = 24h)"
+    },
+    {
+      "name": "status_noreply_id",
+      "kind": "status",
+      "required": true,
+      "sentinel": -903,
+      "hint": "status_id pra mover quem não respondeu (RESOLVER no inventário)"
+    },
+    {
+      "name": "status_noreply_pipeline",
+      "kind": "pipeline",
+      "required": true,
+      "sentinel": -904,
+      "hint": "pipeline_id do status acima"
+    },
+    {
+      "name": "cf_noreply_field",
+      "kind": "raw",
+      "required": false,
+      "hint": "placeholder do campo marcado em 'sem resposta' (ex.: {{lead.cf.<FIELD_ID>}})"
+    },
+    {
+      "name": "cf_noreply_value",
+      "kind": "raw",
+      "required": false,
+      "hint": "valor gravado no campo (ex.: {{lead.cf.<FIELD_ID>.<ENUM_ID>}})"
+    },
+    {
+      "name": "cf_replied_field",
+      "kind": "raw",
+      "required": false,
+      "hint": "placeholder do campo marcado em 'respondeu' (ex.: {{lead.cf.<FIELD_ID>}})"
+    },
+    {
+      "name": "cf_replied_value",
+      "kind": "raw",
+      "required": false,
+      "hint": "valor gravado no campo (ex.: {{lead.cf.<FIELD_ID>.<ENUM_ID>}})"
+    }
+  ],
+  "lir": {
+    "type_functionality": 0,
+    "name": "<<bot_name>>",
+    "type": 2,
+    "text": {
+      "0": {
+        "question": [
+          {
+            "params": {
+              "logic": "or",
+              "conditions": [
+                {
+                  "event": {
+                    "delay": -911,
+                    "action": "ended",
+                    "source": "timer"
+                  },
+                  "action": {
+                    "step": 42,
+                    "type": "question"
+                  }
+                },
+                {
+                  "event": {
+                    "action": "received",
+                    "source": "message"
+                  },
+                  "action": {
+                    "step": 43,
+                    "type": "finish"
+                  }
+                }
+              ]
+            },
+            "handler": "waits"
+          }
+        ],
+        "block_uuid": "a08e9860-3496-4612-b50d-8112462c0617"
+      },
+      "1": {
+        "question": [
+          {
+            "params": {
+              "tag": "",
+              "text": "<<reminder_text>>",
+              "type": "external",
+              "on_error": null,
+              "recipient": {
+                "type": "all_contacts",
+                "way_of_communication": "over_all"
+              },
+              "chat_sources": [
+                {
+                  "id": -901
+                },
+                {
+                  "id": -902
+                }
+              ],
+              "is_in_starting_block": true
+            },
+            "handler": "send_message"
+          },
+          {
+            "params": {
+              "step": 2,
+              "type": "question"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "8c66a9e9-5b87-4e26-83ef-b5075099e31f"
+      },
+      "2": {
+        "question": [
+          {
+            "params": {
+              "logic": "or",
+              "conditions": [
+                {
+                  "event": {
+                    "delay": -912,
+                    "action": "ended",
+                    "source": "timer"
+                  },
+                  "action": {
+                    "step": 44,
+                    "type": "question"
+                  }
+                },
+                {
+                  "event": {
+                    "action": "received",
+                    "source": "message"
+                  },
+                  "action": {
+                    "step": 45,
+                    "type": "question"
+                  }
+                }
+              ]
+            },
+            "handler": "waits"
+          }
+        ],
+        "block_uuid": "fb4b4e45-9113-446e-99f3-608b67f22d4e"
+      },
+      "42": {
+        "question": [
+          {
+            "params": {
+              "name": "set_custom_fields",
+              "params": {
+                "type": "lead",
+                "value": "<<cf_noreply_value>>",
+                "value_type": "value",
+                "custom_field": "<<cf_noreply_field>>"
+              }
+            },
+            "handler": "action"
+          },
+          {
+            "params": {
+              "step": 1,
+              "type": "question"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "620f5286-6b75-4ca3-b391-bcb2a7139ebc"
+      },
+      "44": {
+        "question": [
+          {
+            "params": {
+              "name": "change_status",
+              "params": {
+                "value": -903,
+                "pipeline_id": -904
+              }
+            },
+            "handler": "action"
+          },
+          {
+            "params": {
+              "step": 46,
+              "type": "finish"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "f9d78b2c-329d-456e-bf2d-fbcf7c9316fc"
+      },
+      "45": {
+        "question": [
+          {
+            "params": {
+              "name": "set_custom_fields",
+              "params": {
+                "type": "lead",
+                "value": "<<cf_replied_value>>",
+                "value_type": "value",
+                "custom_field": "<<cf_replied_field>>"
+              }
+            },
+            "handler": "action"
+          },
+          {
+            "params": {
+              "step": 47,
+              "type": "finish"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "dda44265-bcdf-4c73-83d9-a6f3ae48e365"
+      },
+      "conversation": false
+    },
+    "positions": [
+      {
+        "id": 0,
+        "goto": {
+          "block": 5
+        },
+        "step": -1,
+        "type": "start",
+        "actions": [
+          {
+            "id": -3,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": [],
+              "handler": "_start"
+            }
+          }
+        ],
+        "deletable": true
+      },
+      {
+        "code": "trigger",
+        "step": -1,
+        "type": "static",
+        "actions": [],
+        "deletable": true
+      },
+      {
+        "id": 5,
+        "name": "Pausar",
+        "step": 0,
+        "type": "question",
+        "actions": [
+          {
+            "id": 211,
+            "sort": 0,
+            "links": [
+              {
+                "block": 77
+              }
+            ],
+            "params": {
+              "params": {
+                "event": {
+                  "delay": -911,
+                  "action": "ended",
+                  "source": "timer"
+                }
+              },
+              "handler": "wait"
+            }
+          },
+          {
+            "id": 39,
+            "sort": 1,
+            "links": [
+              {
+                "block": 78
+              }
+            ],
+            "params": {
+              "params": {
+                "event": {
+                  "action": "received",
+                  "source": "message"
+                }
+              },
+              "handler": "wait"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "a08e9860-3496-4612-b50d-8112462c0617"
+      },
+      {
+        "id": 6,
+        "goto": {
+          "block": 7
+        },
+        "name": "Enviar mensagem",
+        "step": 1,
+        "type": "question",
+        "actions": [
+          {
+            "id": 264,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "tag": "",
+                "text": "<<reminder_text>>",
+                "type": "external",
+                "recipient": {
+                  "type": "all_contacts",
+                  "way_of_communication": "over_all"
+                },
+                "chat_sources": [
+                  {
+                    "id": -901
+                  },
+                  {
+                    "id": -902
+                  }
+                ],
+                "is_in_starting_block": true
+              },
+              "handler": "send_message"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "8c66a9e9-5b87-4e26-83ef-b5075099e31f"
+      },
+      {
+        "id": 7,
+        "name": "Pausar",
+        "step": 2,
+        "type": "question",
+        "actions": [
+          {
+            "id": 58,
+            "sort": 0,
+            "links": [
+              {
+                "block": 76
+              }
+            ],
+            "params": {
+              "params": {
+                "event": {
+                  "delay": -912,
+                  "action": "ended",
+                  "source": "timer"
+                }
+              },
+              "handler": "wait"
+            }
+          },
+          {
+            "id": 327,
+            "sort": 1,
+            "links": [
+              {
+                "block": 80
+              }
+            ],
+            "params": {
+              "params": {
+                "event": {
+                  "action": "received",
+                  "source": "message"
+                }
+              },
+              "handler": "wait"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "fb4b4e45-9113-446e-99f3-608b67f22d4e"
+      },
+      {
+        "id": 76,
+        "goto": {
+          "block": 79
+        },
+        "name": "Mudar o status do lead",
+        "step": 44,
+        "type": "question",
+        "actions": [
+          {
+            "id": 564,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "name": "change_status",
+                "params": {
+                  "value": -903,
+                  "pipeline_id": -904
+                }
+              },
+              "handler": "action"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "f9d78b2c-329d-456e-bf2d-fbcf7c9316fc"
+      },
+      {
+        "id": 77,
+        "goto": {
+          "block": 6
+        },
+        "name": "Definir campo",
+        "step": 42,
+        "type": "question",
+        "actions": [
+          {
+            "id": 287,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "name": "set_custom_fields",
+                "params": {
+                  "type": "lead",
+                  "value": "<<cf_noreply_value>>",
+                  "value_type": "value",
+                  "custom_field": "<<cf_noreply_field>>"
+                }
+              },
+              "handler": "action"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "620f5286-6b75-4ca3-b391-bcb2a7139ebc"
+      },
+      {
+        "id": 78,
+        "step": 43,
+        "type": "finish",
+        "actions": [
+          {
+            "id": 562,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": [],
+              "handler": "_stop"
+            }
+          }
+        ],
+        "deletable": true
+      },
+      {
+        "id": 79,
+        "step": 46,
+        "type": "finish",
+        "actions": [
+          {
+            "id": 677,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": [],
+              "handler": "_stop"
+            }
+          }
+        ],
+        "deletable": true
+      },
+      {
+        "id": 80,
+        "goto": {
+          "block": 81
+        },
+        "name": "Definir campo",
+        "step": 45,
+        "type": "question",
+        "actions": [
+          {
+            "id": 620,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "name": "set_custom_fields",
+                "params": {
+                  "type": "lead",
+                  "value": "<<cf_replied_value>>",
+                  "value_type": "value",
+                  "custom_field": "<<cf_replied_field>>"
+                }
+              },
+              "handler": "action"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "dda44265-bcdf-4c73-83d9-a6f3ae48e365"
+      },
+      {
+        "id": 81,
+        "step": 47,
+        "type": "finish",
+        "actions": [
+          {
+            "id": 679,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": [],
+              "handler": "_stop"
+            }
+          }
+        ],
+        "deletable": true
+      }
+    ]
+  }
+}

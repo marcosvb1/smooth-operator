@@ -196,7 +196,7 @@ def run_create_adsets(
                 daily_budget=int(item["daily_budget"]),
                 optimization_goal=str(item["optimization_goal"]),
                 billing_event=str(item["billing_event"]),
-                bid_strategy=str(item.get("bid_strategy", "LOWEST_COST_WITHOUT_CAP")),
+                bid_strategy=item.get("bid_strategy") or None,
                 targeting=dict(item["targeting"]),
                 promoted_object=dict(item.get("promoted_object", {})) or None,
                 status=str(item.get("status", "PAUSED")),

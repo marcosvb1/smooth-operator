@@ -1,0 +1,11 @@
+{
+  "name": "kommo",
+  "version": "0.1.0",
+  "description": "Operação do Kommo CRM pela API v4 com gates de aprovação, relatórios de funil, redesenho de pipeline, Salesbots import-ready validados e widgets, para qualquer conta configurada.",
+  "author": {
+    "name": "marcosvb1"
+  },
+  "repository": "https://github.com/marcosvb1/smooth-operator",
+  "license": "MIT",
+  "keywords": ["kommo", "amocrm", "crm", "salesbot", "pipeline", "whatsapp", "widget"]
+}

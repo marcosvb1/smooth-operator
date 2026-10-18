@@ -1,0 +1,126 @@
+{
+  "meta": {
+    "name": "set-lead-name",
+    "pattern": "single action + finish",
+    "description": "Define o nome do lead a partir do primeiro nome do contato. Sem IDs de conta — portável.",
+    "source_bot": "set-lead-name.source.json",
+    "channels": [
+      "any"
+    ]
+  },
+  "slots": [
+    {
+      "name": "bot_name",
+      "kind": "text",
+      "required": true,
+      "hint": "nome do bot no Kommo"
+    }
+  ],
+  "lir": {
+    "type_functionality": 0,
+    "name": "<<bot_name>>",
+    "type": 2,
+    "text": {
+      "0": {
+        "question": [
+          {
+            "params": {
+              "name": "set_custom_fields",
+              "params": {
+                "type": "lead",
+                "value": "{{contact.first_name}} ",
+                "custom_field": "{{lead.name}}"
+              }
+            },
+            "handler": "action"
+          },
+          {
+            "params": {
+              "step": 1,
+              "type": "finish"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "2381c898-c9a6-4bdf-83fc-bf57df84d161"
+      },
+      "conversation": false
+    },
+    "positions": [
+      {
+        "id": 0,
+        "goto": {
+          "block": 1
+        },
+        "step": -1,
+        "type": "start",
+        "actions": [
+          {
+            "id": -3,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": [],
+              "handler": "_start"
+            }
+          }
+        ],
+        "deletable": true
+      },
+      {
+        "id": 1,
+        "goto": {
+          "block": 2
+        },
+        "name": "Definir campo",
+        "step": 0,
+        "type": "question",
+        "actions": [
+          {
+            "id": 57,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "name": "set_custom_fields",
+                "params": {
+                  "type": "lead",
+                  "value": "{{contact.first_name}} ",
+                  "custom_field": "{{lead.name}}"
+                }
+              },
+              "handler": "action"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "2381c898-c9a6-4bdf-83fc-bf57df84d161"
+      },
+      {
+        "id": -1,
+        "code": "trigger",
+        "step": -1,
+        "type": "static",
+        "actions": [],
+        "deletable": true
+      },
+      {
+        "id": 2,
+        "step": 1,
+        "type": "finish",
+        "actions": [
+          {
+            "id": 59,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": [],
+              "handler": "_stop"
+            }
+          }
+        ],
+        "deletable": true
+      }
+    ]
+  }
+}

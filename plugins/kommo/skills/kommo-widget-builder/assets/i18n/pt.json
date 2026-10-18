@@ -1,0 +1,13 @@
+{
+  "widget": {
+    "name": "Gerenciador de fontes",
+    "short_description": "Cria e lista fontes de lead registradas.",
+    "description": "Cria, lista e exclui fontes de lead da integração, para atribuir leads de formulários e automações a uma fonte específica."
+  },
+  "advanced": {
+    "title": "Gerenciador de fontes — Configurações"
+  },
+  "settings": {
+    "source_name": "Nome da fonte padrão"
+  }
+}

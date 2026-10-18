@@ -1,0 +1,687 @@
+{
+  "meta": {
+    "name": "post-sale-nurture",
+    "pattern": "sequência temporizada de N mensagens + encerrar conversa",
+    "description": "Pós-venda/nutrição: envia uma sequência de mensagens espaçadas por timers e encerra a conversa ao final. Portável (sem IDs de conta; usa o canal do gatilho).",
+    "source_bot": "post-sale-nurture.source.json",
+    "channels": [
+      "any"
+    ]
+  },
+  "slots": [
+    {
+      "name": "bot_name",
+      "kind": "text",
+      "required": true,
+      "hint": "nome do bot"
+    },
+    {
+      "name": "msg_1",
+      "kind": "text",
+      "required": true,
+      "hint": "mensagem #1 da sequência (pode usar {{lead.name}})"
+    },
+    {
+      "name": "msg_2",
+      "kind": "text",
+      "required": true,
+      "hint": "mensagem #2 da sequência (pode usar {{lead.name}})"
+    },
+    {
+      "name": "msg_3",
+      "kind": "text",
+      "required": true,
+      "hint": "mensagem #3 da sequência (pode usar {{lead.name}})"
+    },
+    {
+      "name": "msg_4",
+      "kind": "text",
+      "required": true,
+      "hint": "mensagem #4 da sequência (pode usar {{lead.name}})"
+    },
+    {
+      "name": "msg_5",
+      "kind": "text",
+      "required": true,
+      "hint": "mensagem #5 da sequência (pode usar {{lead.name}})"
+    },
+    {
+      "name": "delay_1_s",
+      "kind": "delay",
+      "required": true,
+      "sentinel": -920,
+      "hint": "espera #1 em segundos (ex.: 172800 = 2.0d)"
+    },
+    {
+      "name": "delay_2_s",
+      "kind": "delay",
+      "required": true,
+      "sentinel": -921,
+      "hint": "espera #2 em segundos (ex.: 489600 = 5.7d)"
+    },
+    {
+      "name": "delay_3_s",
+      "kind": "delay",
+      "required": true,
+      "sentinel": -922,
+      "hint": "espera #3 em segundos (ex.: 1814400 = 21.0d)"
+    },
+    {
+      "name": "delay_4_s",
+      "kind": "delay",
+      "required": true,
+      "sentinel": -923,
+      "hint": "espera #4 em segundos (ex.: 5184000 = 60.0d)"
+    }
+  ],
+  "lir": {
+    "type_functionality": 0,
+    "name": "<<bot_name>>",
+    "type": 2,
+    "text": {
+      "0": {
+        "question": [
+          {
+            "params": {
+              "logic": "or",
+              "conditions": [
+                {
+                  "event": {
+                    "delay": -920,
+                    "action": "ended",
+                    "source": "timer"
+                  },
+                  "action": {
+                    "step": 1,
+                    "type": "question"
+                  }
+                }
+              ]
+            },
+            "handler": "waits"
+          }
+        ],
+        "block_uuid": "4c31e29b-eaef-4065-948a-1c099b7af470"
+      },
+      "1": {
+        "question": [
+          {
+            "params": {
+              "tag": "",
+              "text": "<<msg_1>>",
+              "type": "external",
+              "on_error": null,
+              "recipient": {
+                "type": "all_contacts",
+                "way_of_communication": "over_all"
+              },
+              "is_in_starting_block": true,
+              "send_to_all_chat_sources": true
+            },
+            "handler": "send_message"
+          },
+          {
+            "params": {
+              "step": 2,
+              "type": "question"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "88a65df7-c0a5-4136-8d1a-80de7941cfb0"
+      },
+      "2": {
+        "question": [
+          {
+            "params": {
+              "tag": "",
+              "text": "<<msg_2>>",
+              "type": "external",
+              "on_error": null,
+              "recipient": {
+                "type": "all_contacts",
+                "way_of_communication": "over_all"
+              },
+              "is_in_starting_block": false,
+              "send_to_all_chat_sources": true
+            },
+            "handler": "send_message"
+          },
+          {
+            "params": {
+              "step": 3,
+              "type": "question"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "471edef6-7d65-49d4-b39c-5abe12313234"
+      },
+      "3": {
+        "question": [
+          {
+            "params": {
+              "logic": "or",
+              "conditions": [
+                {
+                  "event": {
+                    "delay": -921,
+                    "action": "ended",
+                    "source": "timer"
+                  },
+                  "action": {
+                    "step": 4,
+                    "type": "question"
+                  }
+                }
+              ]
+            },
+            "handler": "waits"
+          }
+        ],
+        "block_uuid": "d3307504-52bf-49d7-bb2b-6d769c66ce31"
+      },
+      "4": {
+        "question": [
+          {
+            "params": {
+              "tag": "",
+              "text": "<<msg_3>>",
+              "type": "external",
+              "on_error": null,
+              "recipient": {
+                "type": "all_contacts",
+                "way_of_communication": "over_all"
+              },
+              "is_in_starting_block": false,
+              "send_to_all_chat_sources": true
+            },
+            "handler": "send_message"
+          },
+          {
+            "params": {
+              "step": 5,
+              "type": "question"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "51796f3a-028e-44e6-875e-a31a97309bf9"
+      },
+      "5": {
+        "question": [
+          {
+            "params": {
+              "logic": "or",
+              "conditions": [
+                {
+                  "event": {
+                    "delay": -922,
+                    "action": "ended",
+                    "source": "timer"
+                  },
+                  "action": {
+                    "step": 6,
+                    "type": "question"
+                  }
+                }
+              ]
+            },
+            "handler": "waits"
+          }
+        ],
+        "block_uuid": "805c077a-c082-44d1-ab06-765fc6cfe659"
+      },
+      "6": {
+        "question": [
+          {
+            "params": {
+              "tag": "",
+              "text": "<<msg_4>>",
+              "type": "external",
+              "on_error": null,
+              "recipient": {
+                "type": "all_contacts",
+                "way_of_communication": "over_all"
+              },
+              "is_in_starting_block": false,
+              "send_to_all_chat_sources": true
+            },
+            "handler": "send_message"
+          },
+          {
+            "params": {
+              "step": 7,
+              "type": "question"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "6c7d32e9-2ebe-44be-8b5b-20c80421e9f8"
+      },
+      "7": {
+        "question": [
+          {
+            "params": {
+              "logic": "or",
+              "conditions": [
+                {
+                  "event": {
+                    "delay": -923,
+                    "action": "ended",
+                    "source": "timer"
+                  },
+                  "action": {
+                    "step": 8,
+                    "type": "question"
+                  }
+                }
+              ]
+            },
+            "handler": "waits"
+          }
+        ],
+        "block_uuid": "dae77e7f-d01b-43f2-8dcf-41e92701ad02"
+      },
+      "8": {
+        "question": [
+          {
+            "params": {
+              "tag": "",
+              "text": "<<msg_5>>",
+              "type": "external",
+              "on_error": null,
+              "recipient": {
+                "type": "all_contacts",
+                "way_of_communication": "over_all"
+              },
+              "is_in_starting_block": false,
+              "send_to_all_chat_sources": true
+            },
+            "handler": "send_message"
+          },
+          {
+            "params": {
+              "step": 9,
+              "type": "question"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "0cb427a2-51e2-4b9c-af90-e54e44d3e547"
+      },
+      "9": {
+        "question": [
+          {
+            "params": {
+              "name": "change_conversation_status",
+              "params": {
+                "status_action": "close"
+              }
+            },
+            "handler": "action"
+          },
+          {
+            "params": {
+              "step": 10,
+              "type": "finish"
+            },
+            "handler": "goto"
+          }
+        ],
+        "block_uuid": "c5ae5e09-32da-420a-bee6-ff26df29830d"
+      },
+      "conversation": false
+    },
+    "positions": [
+      {
+        "id": 0,
+        "goto": {
+          "block": 1
+        },
+        "step": -1,
+        "type": "start",
+        "actions": [
+          {
+            "id": -3,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": [],
+              "handler": "_start"
+            }
+          }
+        ],
+        "deletable": true
+      },
+      {
+        "id": -1,
+        "code": "trigger",
+        "step": -1,
+        "type": "static",
+        "actions": [],
+        "deletable": true
+      },
+      {
+        "id": 1,
+        "name": "Pausar",
+        "step": 0,
+        "type": "question",
+        "actions": [
+          {
+            "id": 54,
+            "sort": 0,
+            "links": [
+              {
+                "block": 2
+              }
+            ],
+            "params": {
+              "params": {
+                "event": {
+                  "delay": -920,
+                  "action": "ended",
+                  "source": "timer"
+                }
+              },
+              "handler": "wait"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "4c31e29b-eaef-4065-948a-1c099b7af470"
+      },
+      {
+        "id": 2,
+        "goto": {
+          "block": 3
+        },
+        "name": "Enviar mensagem",
+        "step": 1,
+        "type": "question",
+        "actions": [
+          {
+            "id": 107,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "tag": "",
+                "text": "<<msg_1>>",
+                "type": "external",
+                "recipient": {
+                  "type": "all_contacts",
+                  "way_of_communication": "over_all"
+                },
+                "is_in_starting_block": true,
+                "send_to_all_chat_sources": true
+              },
+              "handler": "send_message"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "88a65df7-c0a5-4136-8d1a-80de7941cfb0"
+      },
+      {
+        "id": 3,
+        "goto": {
+          "block": 5
+        },
+        "name": "Enviar mensagem",
+        "step": 2,
+        "type": "question",
+        "actions": [
+          {
+            "id": 160,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "tag": "",
+                "text": "<<msg_2>>",
+                "type": "external",
+                "recipient": {
+                  "type": "all_contacts",
+                  "way_of_communication": "over_all"
+                },
+                "is_in_starting_block": false,
+                "send_to_all_chat_sources": true
+              },
+              "handler": "send_message"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "471edef6-7d65-49d4-b39c-5abe12313234"
+      },
+      {
+        "id": 5,
+        "name": "Pausar",
+        "step": 3,
+        "type": "question",
+        "actions": [
+          {
+            "id": 266,
+            "sort": 0,
+            "links": [
+              {
+                "block": 6
+              }
+            ],
+            "params": {
+              "params": {
+                "event": {
+                  "delay": -921,
+                  "action": "ended",
+                  "source": "timer"
+                }
+              },
+              "handler": "wait"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "d3307504-52bf-49d7-bb2b-6d769c66ce31"
+      },
+      {
+        "id": 6,
+        "goto": {
+          "block": 8
+        },
+        "name": "Enviar mensagem",
+        "step": 4,
+        "type": "question",
+        "actions": [
+          {
+            "id": 319,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "tag": "",
+                "text": "<<msg_3>>",
+                "type": "external",
+                "recipient": {
+                  "type": "all_contacts",
+                  "way_of_communication": "over_all"
+                },
+                "is_in_starting_block": false,
+                "send_to_all_chat_sources": true
+              },
+              "handler": "send_message"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "51796f3a-028e-44e6-875e-a31a97309bf9"
+      },
+      {
+        "id": 8,
+        "name": "Pausar",
+        "step": 5,
+        "type": "question",
+        "actions": [
+          {
+            "id": 425,
+            "sort": 0,
+            "links": [
+              {
+                "block": 9
+              }
+            ],
+            "params": {
+              "params": {
+                "event": {
+                  "delay": -922,
+                  "action": "ended",
+                  "source": "timer"
+                }
+              },
+              "handler": "wait"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "805c077a-c082-44d1-ab06-765fc6cfe659"
+      },
+      {
+        "id": 9,
+        "goto": {
+          "block": 10
+        },
+        "name": "Enviar mensagem",
+        "step": 6,
+        "type": "question",
+        "actions": [
+          {
+            "id": 478,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "tag": "",
+                "text": "<<msg_4>>",
+                "type": "external",
+                "recipient": {
+                  "type": "all_contacts",
+                  "way_of_communication": "over_all"
+                },
+                "is_in_starting_block": false,
+                "send_to_all_chat_sources": true
+              },
+              "handler": "send_message"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "6c7d32e9-2ebe-44be-8b5b-20c80421e9f8"
+      },
+      {
+        "id": 10,
+        "name": "Pausar",
+        "step": 7,
+        "type": "question",
+        "actions": [
+          {
+            "id": 531,
+            "sort": 0,
+            "links": [
+              {
+                "block": 11
+              }
+            ],
+            "params": {
+              "params": {
+                "event": {
+                  "delay": -923,
+                  "action": "ended",
+                  "source": "timer"
+                }
+              },
+              "handler": "wait"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "dae77e7f-d01b-43f2-8dcf-41e92701ad02"
+      },
+      {
+        "id": 11,
+        "goto": {
+          "block": 13
+        },
+        "name": "Enviar mensagem",
+        "step": 8,
+        "type": "question",
+        "actions": [
+          {
+            "id": 584,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "tag": "",
+                "text": "<<msg_5>>",
+                "type": "external",
+                "recipient": {
+                  "type": "all_contacts",
+                  "way_of_communication": "over_all"
+                },
+                "is_in_starting_block": false,
+                "send_to_all_chat_sources": true
+              },
+              "handler": "send_message"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "0cb427a2-51e2-4b9c-af90-e54e44d3e547"
+      },
+      {
+        "id": 13,
+        "goto": {
+          "block": 14
+        },
+        "name": "Alterar o status da conversa",
+        "step": 9,
+        "type": "question",
+        "actions": [
+          {
+            "id": 690,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": {
+                "name": "change_conversation_status",
+                "params": {
+                  "status_action": "close"
+                }
+              },
+              "handler": "action"
+            }
+          }
+        ],
+        "deletable": true,
+        "block_uuid": "c5ae5e09-32da-420a-bee6-ff26df29830d"
+      },
+      {
+        "id": 14,
+        "step": 10,
+        "type": "finish",
+        "actions": [
+          {
+            "id": 743,
+            "sort": 0,
+            "links": [],
+            "params": {
+              "params": [],
+              "handler": "_stop"
+            }
+          }
+        ],
+        "deletable": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kommo-sources-proxy",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-01",
+  "account_id": "<YOUR_CF_ACCOUNT_ID>",
+  "observability": { "enabled": true },
+  "vars": {
+    "KOMMO_DOMAIN": "<your-subdomain>.kommo.com",
+    // Opcional: só esta origem pode usar o Worker.
+    "ALLOWED_ORIGIN": "https://<your-subdomain>.kommo.com"
+  }
+  // Secrets (set via `wrangler secret put`):
+  //   KOMMO_TOKEN — long-lived token da integração-widget dona das fontes
+}
