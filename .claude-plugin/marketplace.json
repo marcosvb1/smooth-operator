@@ -5,26 +5,26 @@
     "name": "marcosvb1"
   },
   "metadata": {
-    "description": "Claude skills, plugins and mods developed in marcosvb1/smooth-operator.",
+    "description": "Claude skills and plugins for operating real apps: CRMs, ad accounts, billing and project trackers.",
     "version": "0.1.0"
   },
   "plugins": [
     {
       "name": "ads-ops",
       "source": "./plugins/ads-ops",
-      "description": "Operação de Meta Ads e TikTok Ads com dry-run e criação pausada, para qualquer conta configurada.",
+      "description": "Meta Ads and TikTok Ads operations with dry-run and paused creation, for any configured account.",
       "version": "0.2.0",
       "category": "marketing",
       "keywords": [
         "meta-ads",
         "tiktok-ads",
-        "midia-paga"
+        "paid-media"
       ]
     },
     {
       "name": "kommo",
       "source": "./plugins/kommo",
-      "description": "Operação do Kommo CRM com gates de aprovação, relatórios de funil, redesenho de pipeline, Salesbots validados e widgets, para qualquer conta configurada.",
+      "description": "Kommo CRM operations with approval gates, funnel reports, pipeline redesign, validated Salesbots and widgets, for any configured account.",
       "version": "0.1.0",
       "category": "sales",
       "keywords": [
