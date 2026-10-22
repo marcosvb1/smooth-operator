@@ -22,6 +22,10 @@ A ideia vem da skill `eli5` ("explain like I'm 5"), um prompt de uma linha: *"Ex
 
 ### 1. Entender o pedido (sem interrogatório)
 
+Tema passado no comando: $ARGUMENTS
+
+Se a pessoa chamou `/quero-que-desenhe <tema>`, o tema está aí em cima. Se veio vazio (ou aparece o texto literal do marcador), pegue o tema da mensagem e da conversa.
+
 Descubra o tema e o que a pessoa já sabe a partir da mensagem e do material que ela mandou (documento, print, link, conversa colada: leia tudo). Só pergunte se o tema for ambíguo de verdade ("explica o Copom" é claro; "explica isso" sem anexo não é), e aí faça **uma** pergunta. Na dúvida sobre o nível, assuma zero.
 
 ### 2. Achar o fio da meada
