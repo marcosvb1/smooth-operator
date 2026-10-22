@@ -1,11 +1,17 @@
 {
   "name": "ads-ops",
   "version": "0.2.0",
-  "description": "Operação de mídia paga no Meta Ads e no TikTok Ads: criar, duplicar, atualizar e auditar campanhas com dry-run e criação pausada, para qualquer conta configurada.",
+  "description": "Paid media operations in Meta Ads and TikTok Ads: create, duplicate, update and audit campaigns with dry-run and paused creation, for any configured account.",
   "author": {
     "name": "marcosvb1"
   },
   "repository": "https://github.com/marcosvb1/smooth-operator",
   "license": "MIT",
-  "keywords": ["meta-ads", "facebook-ads", "tiktok-ads", "midia-paga", "trafego"]
+  "keywords": [
+    "meta-ads",
+    "facebook-ads",
+    "tiktok-ads",
+    "paid-media",
+    "ads"
+  ]
 }
