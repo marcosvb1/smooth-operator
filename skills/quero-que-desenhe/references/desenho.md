@@ -1,50 +1,64 @@
 # Como desenhar a página
 
-## Estilo dos desenhos
+## Cena, não diagrama
 
-- **SVG inline**, à mão, simples: bonequinhos de palito, caixas, setas, ícones grossos. Cara de quadro-negro de professor bom, não de infográfico corporativo.
-- Traço grosso (`stroke-width` 3 a 5), cantos arredondados (`stroke-linecap="round"`, `stroke-linejoin="round"`), poucas cores.
-- Um desenho por quadro, com `viewBox` e `width="100%"` para escalar. Altura visual entre 220 e 420 px no desktop.
-- Etiquetas curtas dentro do desenho (`<text>`). Com `viewBox` de 800 de largura, use `font-size` de no mínimo 32 a 36 (vira cerca de 16 px num celular de 360 px). As palavras do desenho contam no limite de "pouco texto".
-- Mostre movimento com setas e numeração (①②③), e antes/depois lado a lado.
-- Personagem recorrente ajuda: um mesmo bonequinho (com um boné, um chinelo, uma sacola de feira) atravessando os quadros dá continuidade à história.
-- Emoji pode complementar, mas não substitui o desenho.
-- Todo `<svg>` tem `role="img"` e um `<title>` descrevendo a cena, para leitor de tela.
+O erro mais comum é desenhar caixinha, seta e bonequinho de palito. Isso explica, mas não encanta e serve para qualquer assunto. Cada quadro é uma **cena de gibi**:
 
-## Paleta
+- **Um lugar**: cozinha de azulejo, balcão de padaria com toldo listrado, feira, ponto de ônibus, sala com sofá e TV. Pinte o fundo (parede, chão, céu); quadro com fundo branco parece slide.
+- **Um personagem fixo** que atravessa a página e muda de expressão a cada quadro (feliz, aflito, em dúvida, orgulhoso). Defina o corpo uma vez como `<symbol>` e troque só o rosto e os braços. Varie tom de pele e gênero entre páginas diferentes.
+- **Algo acontecendo**: ação e consequência no mesmo quadro (o bolo sola e sai fumaça; o pedido chega e o sino toca).
+- **Recursos de gibi**: balão de fala, balão de pensamento, onomatopeia num estouro amarelo (PUFF!, PLIM!, TCHUM!), gotinha de suor, linhas de movimento, vapor saindo da xícara.
+- **Objetos com detalhe de verdade**: ímã de abacaxi na geladeira, mancha de café no caderno, comanda de padaria, toalha xadrez. O detalhe brasileiro está no objeto, não só no texto.
+- **Tamanho comunica**: muito dinheiro é uma pilha alta; pouco tempo é um relógio pequeno.
 
-Cores de feira e de bandeirinha de São João, sem cara de bandeira nacional. Defina como variáveis no `:root` e redefina para modo escuro:
+Teste: tape o texto do quadro. Se o desenho sozinho não conta o que está acontecendo, refaça a cena.
 
-```css
-:root {
-  --fundo: #fffaf0;   /* papel */
-  --tinta: #1f2937;   /* traço e texto */
-  --verde: #16a34a;
-  --amarelo: #f59e0b;
-  --azul: #2563eb;
-  --rosa: #e11d48;
-  --suave: #fde68a;   /* destaque de fundo */
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fundo: #111827;
-    --tinta: #f3f4f6;
-    --suave: #78350f;
-  }
-}
-body { background: var(--fundo); color: var(--tinta); }
+## Estilo e técnica do SVG
+
+- Traço de tinta grosso e escuro (`stroke-width` 4, finos de 2.5), cantos arredondados, **cores chapadas preenchendo tudo**. Use classes CSS (`.s`, `.pele`, `.camisa`...) para não repetir atributos.
+- Traço de mão: um filtro aplicado à cena inteira deixa as linhas levemente tremidas, como desenho à mão:
+
+```html
+<filter id="rabisco"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="2.6"/></filter>
 ```
 
-Nos SVGs use `stroke="currentColor"`, `fill="currentColor"` em todo `<text>` (o padrão é preto e some no modo escuro) e cores por `style="fill: var(--verde)"`, que funciona melhor com variáveis CSS do que o atributo `fill=` puro.
+- Texturas por `<pattern>`: azulejo, xadrez de toalha, listras de toldo. Defina filtros, padrões e o personagem num `<svg width="0" height="0" style="position:absolute">` no começo da página (não use `display:none`, que quebra filtros em alguns navegadores).
+- Letras dentro do desenho com fonte de mão (por exemplo `"Patrick Hand"` do Google Fonts, com fallback `cursive`). Onomatopeia em fonte grossa e colorida.
+- Todo `<svg>` tem `role="img"` e um `<title>` que descreve a cena, para leitor de tela.
+- Antes de fechar, confira sobreposições: balão em cima do rosto, objeto tampando um texto, texto saindo do estouro.
 
-## Layout
+## Tamanho e responsividade
 
-- Coluna única, `max-width` de ~880 px, centralizada, margem lateral de 16 px no celular. Sem rolagem horizontal.
-- Quadro = desenho em cima (ou à esquerda em telas largas) + número, título e até duas frases.
-- Muito espaço em branco entre quadros. A página deve ser rolada como um gibi, um quadro por "tela".
-- Fonte com personalidade e legível: por exemplo `"Baloo 2"` ou `"Nunito"` do Google Fonts nos títulos, sempre com fallback (`font-family: "Baloo 2", system-ui, sans-serif`), e fonte do sistema no corpo. Corpo com 18 px ou mais.
-- O quadro "Onde a comparação falha" pode ter um visual de bilhetinho (fundo `--suave`, borda tracejada).
-- O "Resumo de bolso" fica num cartão que caiba num print de celular.
+- **`viewBox` de 400 de largura** e proporção perto de 4:3 (400×300 ou 400×320). Desenho panorâmico (800×300) vira uma tirinha minúscula no celular.
+- Texto dentro do SVG com `font-size` de no mínimo 13 a 15 nessa escala (fica com ~12 a 14 px num celular de 390 px); títulos de balão com 20 ou mais. Frase longa não vai no desenho, vai na legenda em HTML.
+- No desktop, quadro e legenda lado a lado em grid (`minmax(0,1.25fr) minmax(0,1fr)`), alternando o lado a cada quadro; abaixo de ~760 px, empilhe (desenho em cima, legenda embaixo) e desfaça a alternância.
+- Legenda com `min-width: 0` e `max-width` de ~46ch; corpo com 18 px ou mais.
+- Nada de largura fixa em px; nenhuma rolagem horizontal.
+
+## Paleta e tema
+
+O painel desenhado é **papel impresso**: fundo creme, tinta escura e cores fixas, iguais nos dois temas, com borda grossa e sombra dura (`box-shadow: 7px 7px 0`), como um quadrinho colado na página. Só a página em volta muda no modo escuro:
+
+```css
+:root { --fundo:#fbf3e4; --texto:#2a1f14; --nota:#fde68a; --sombra:#2a1f14; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --fundo:#1a1611; --texto:#f5ecdc; --nota:#3d2f12; --sombra:#000; color-scheme: dark } }
+:root[data-theme="dark"] { --fundo:#1a1611; --texto:#f5ecdc; --nota:#3d2f12; --sombra:#000; color-scheme: dark }
+body { background: var(--fundo); color: var(--texto); }
+.painel { background:#fffaf0; border:4px solid #2a1f14; border-radius:16px; box-shadow:7px 7px 0 var(--sombra); overflow:hidden }
+```
+
+Cores de feira e de bandeirinha: amarelo, verde, azul, vermelho, rosa, sem cara de bandeira nacional.
+
+## Layout da página
+
+- Coluna de até ~1040 px, margem lateral de 16 px no celular (`padding-left: max(16px, env(safe-area-inset-left, 0px))` e o mesmo à direita).
+- Muito espaço entre quadros: a página se lê rolando, como um gibi.
+- Títulos numa fonte com personalidade (`"Baloo 2"`, com fallback `system-ui`), corpo legível (`"Nunito"` ou fonte do sistema).
+- "Onde a comparação falha" como bilhetinho (fundo `--nota`, borda tracejada, levemente torto); "Resumo de bolso" como cartão que caiba num print.
+
+## Se der, confira no celular
+
+Quando houver navegador ou ferramenta de preview, olhe a página uma vez a 390 px e a 1280 px, nos temas claro e escuro, antes de entregar. Procure rolagem horizontal, texto pequeno demais no desenho e sobreposições.
 
 ## Esqueleto
 
@@ -58,16 +72,21 @@ Nos SVGs use `stroke="currentColor"`, `fill="currentColor"` em todo `<text>` (o 
   <style>/* paleta + layout acima */</style>
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><!-- filtro rabisco, patterns, <symbol> do personagem --></defs></svg>
   <header class="capa">
     <h1>Juros, ou: o aluguel do dinheiro</h1>
     <p class="vo">Quem pega dinheiro emprestado paga aluguel por ele.</p>
-    <svg role="img" viewBox="0 0 800 400" width="100%"><title>...</title>...</svg>
+    <figure class="painel"><svg role="img" viewBox="0 0 400 300"><title>...</title>...</svg></figure>
   </header>
 
   <section class="quadro">
-    <svg role="img" viewBox="0 0 800 360" width="100%"><title>...</title>...</svg>
-    <h2><span class="num">1</span> O seu Zé e a caderneta</h2>
-    <p>Duas frases, no máximo.</p>
+    <figure class="painel">
+      <svg role="img" viewBox="0 0 400 320"><title>Seu Zé, de avental, anota na caderneta o fiado de uma cliente no balcão da venda</title><g filter="url(#rabisco)">...</g></svg>
+    </figure>
+    <div class="legenda">
+      <h2><span class="num">1</span> O seu Zé e a caderneta</h2>
+      <p>Duas frases, no máximo.</p>
+    </div>
   </section>
   <!-- mais quadros -->
 
@@ -86,7 +105,8 @@ Nos SVGs use `stroke="currentColor"`, `fill="currentColor"` em todo `<text>` (o 
 
 ## Erros comuns
 
-- Desenho decorativo que não explica nada (um ícone de "dinheiro" ao lado do texto). O desenho tem que mostrar o mecanismo.
-- Texto dentro do SVG pequeno demais no celular.
+- Diagrama de caixa e seta no lugar de cena; bonequinho de palito sem rosto nem lugar.
+- Desenho decorativo que não explica nada (um ícone de "dinheiro" ao lado do texto).
+- `viewBox` largo demais: no celular vira tirinha ilegível.
 - Seis quadros com seis universos diferentes: a pessoa perde o fio.
-- Cor clara em fundo claro no modo escuro (esqueceu de usar as variáveis).
+- Balão, objeto ou estouro tampando o rosto do personagem ou outro texto.

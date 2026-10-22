@@ -11,7 +11,7 @@ A ideia vem da skill `eli5` ("explain like I'm 5"), um prompt de uma linha: *"Ex
 
 ## Princípios
 
-1. **O desenho explica, o texto legenda.** Cada quadro tem um desenho que sozinho já conta a ideia; o texto do lado tem no máximo duas frases curtas. Se precisou de um parágrafo, o desenho está errado.
+1. **O desenho explica, o texto legenda.** Cada quadro é uma cena de gibi (um lugar, um personagem com expressão, algo acontecendo) que sozinha já conta a ideia; o texto do lado tem no máximo duas frases curtas. Caixinha e seta não é cena. Se precisou de um parágrafo, o desenho está errado.
 2. **Uma comparação brasileira por ideia, e ela tem que ser fiel.** A comparação serve ao conceito, não o contrário. Antes de usar, confira se o mecanismo é o mesmo (quem faz o quê, em que ordem, o que acontece quando dá errado). Comparação engraçada e errada é pior que nenhuma.
 3. **Diga onde a comparação quebra.** Toda analogia mente em algum ponto. Um quadro final "Onde a comparação falha" evita que a pessoa saia com uma ideia torta.
 4. **Zero jargão sem tradução.** Termo técnico só aparece depois que o desenho já mostrou a coisa, e aparece como etiqueta: "isso aqui tem nome: *latência*".
@@ -75,6 +75,7 @@ Tema: o que é latência.
 ## Antes de entregar, confira
 
 - [ ] Dá para entender a ideia só olhando os desenhos, sem ler nada?
+- [ ] Cada desenho é uma cena com lugar, personagem e ação, e não um diagrama?
 - [ ] Cada comparação é fiel ao mecanismo, e a falha dela está declarada?
 - [ ] Nenhum termo técnico apareceu antes de ser mostrado?
 - [ ] Nenhum quadro tem mais de duas frases?
