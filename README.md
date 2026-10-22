@@ -64,10 +64,12 @@ The skill ships with a [trigger eval](skills/mise-en-place/evals/README.md): 68 
 | --- | --- | --- |
 | [`ads-ops`](plugins/ads-ops/README.md) | plugin | Meta Ads and TikTok Ads operations: create, duplicate, update and audit campaigns with dry-run and paused creation. |
 | [`kommo`](plugins/kommo/README.md) | plugin | Kommo CRM operations with approval gates, funnel reports, pipeline redesign, validated Salesbots and widgets. |
+| [`quero-que-desenhe`](skills/quero-que-desenhe/SKILL.md) | skill | In Brazilian Portuguese: explains any topic "like I'm 5" as a comic-style HTML page with big drawings, few words and everyday Brazilian references. |
 
 ```bash
 /plugin install ads-ops@smooth-operator
 /plugin install kommo@smooth-operator
+/plugin install quero-que-desenhe@smooth-operator
 ```
 
 Per project: `claude plugin install <plugin>@smooth-operator --scope project`.
