@@ -16,6 +16,7 @@ This repo works as a Claude Code plugin marketplace.
 | --- | --- | --- |
 | `ads-ops` | plugin | Meta Ads and TikTok Ads operations with dry-run and paused creation. |
 | [`mise-en-place`](skills/mise-en-place/README.md) | skill | Prepares the workspace so Claude can operate real apps: a verified map of your account (IDs, fields, conventions, payloads, rules). |
+| [`quero-que-desenhe`](skills/quero-que-desenhe/SKILL.md) | skill | In Brazilian Portuguese: explains any topic "like I'm 5" with big drawings, few words and everyday Brazilian references, as an HTML page. |
 
 ## Install
 

@@ -51,6 +51,24 @@
       "skills": [
         "./skills/mise-en-place"
       ]
+    },
+    {
+      "name": "quero-que-desenhe",
+      "source": "./",
+      "strict": false,
+      "description": "Explains any topic in Brazilian Portuguese as if you knew nothing about it: an HTML page with big drawings, few words and everyday Brazilian references (Pix, feira, fila do banco), with a plain-text ASCII fallback.",
+      "version": "0.1.0",
+      "category": "productivity",
+      "keywords": [
+        "eli5",
+        "explain",
+        "pt-br",
+        "diagrams",
+        "learning"
+      ],
+      "skills": [
+        "./skills/quero-que-desenhe"
+      ]
     }
   ]
 }
