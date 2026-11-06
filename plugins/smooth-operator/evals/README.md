@@ -1,6 +1,6 @@
-# mise-en-place evals
+# smooth-operator evals (mise-en-place)
 
-Trigger eval: does the skill fire when it should, and stay out of the way when it shouldn't? It measures the `description` in `SKILL.md`, which is the cheapest and most attributable surface to improve.
+Trigger eval: does the skill fire when it should, and stay out of the way when it shouldn't? It measures the `description` in `skills/mise-en-place/SKILL.md`, which is the cheapest and most attributable surface to improve.
 
 - 33 `should-trigger` cases (explicit requests, implicit "map the account before we use it", updates, audits; English and Portuguese).
 - 35 `should-not-trigger` near misses: one-off questions about a tool, day-to-day operation, writing an MCP server, mapping a codebase, and the cooking meaning of "mise en place".
@@ -15,11 +15,11 @@ Needs Claude Code with `claude plugin eval` and an `ANTHROPIC_API_KEY` (or a log
 
 ```bash
 # pilot: one run per case, with a spend ceiling
-claude plugin eval ./skills/mise-en-place --ablation none --runs 1 \
+claude plugin eval ./plugins/smooth-operator --ablation none --runs 1 \
   --concurrency 4 --max-cost-usd 2 --no-publish --trust-plugin
 
 # full run: 3 runs per case (the default)
-claude plugin eval ./skills/mise-en-place --ablation none \
+claude plugin eval ./plugins/smooth-operator --ablation none \
   --concurrency 4 --no-publish --trust-plugin --json results.json
 ```
 

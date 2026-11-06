@@ -35,21 +35,18 @@
       ]
     },
     {
-      "name": "mise-en-place",
-      "source": "./skills",
-      "strict": false,
-      "description": "Prepare the workspace so Claude can operate real apps: a verified map of your account (accounts, IDs, fields, conventions, payloads, rules) that Claude reads before acting, instead of learning by trial and error mid-task.",
-      "version": "0.1.2",
+      "name": "smooth-operator",
+      "source": "./plugins/smooth-operator",
+      "description": "Prepare the workspace so Claude can operate real apps: mise-en-place builds a verified map of your account (accounts, IDs, fields, conventions, payloads, rules) that Claude reads before acting, instead of learning by trial and error mid-task.",
+      "version": "0.1.0",
       "category": "productivity",
       "keywords": [
+        "mise-en-place",
         "references",
         "tool-mapping",
         "api",
         "steering",
         "onboarding"
-      ],
-      "skills": [
-        "./mise-en-place"
       ]
     },
     {
