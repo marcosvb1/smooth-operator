@@ -36,10 +36,10 @@
     },
     {
       "name": "mise-en-place",
-      "source": "./",
+      "source": "./skills",
       "strict": false,
       "description": "Prepare the workspace so Claude can operate real apps: a verified map of your account (accounts, IDs, fields, conventions, payloads, rules) that Claude reads before acting, instead of learning by trial and error mid-task.",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "category": "productivity",
       "keywords": [
         "references",
@@ -49,15 +49,15 @@
         "onboarding"
       ],
       "skills": [
-        "./skills/mise-en-place"
+        "./mise-en-place"
       ]
     },
     {
       "name": "quero-que-desenhe",
-      "source": "./",
+      "source": "./skills",
       "strict": false,
       "description": "Explains any topic in Brazilian Portuguese as if you knew nothing about it: an HTML page with big drawings, few words and everyday Brazilian references (Pix, feira, fila do banco), with a plain-text ASCII fallback.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "productivity",
       "keywords": [
         "eli5",
@@ -67,7 +67,7 @@
         "learning"
       ],
       "skills": [
-        "./skills/quero-que-desenhe"
+        "./quero-que-desenhe"
       ]
     }
   ]
