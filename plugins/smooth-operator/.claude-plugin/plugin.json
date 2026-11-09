@@ -1,0 +1,18 @@
+{
+  "name": "smooth-operator",
+  "version": "0.1.0",
+  "description": "Prepare the workspace so Claude can operate real apps: mise-en-place builds a verified map of your account (accounts, IDs, fields, conventions, payloads, rules) that Claude reads before acting, instead of learning by trial and error mid-task.",
+  "author": {
+    "name": "marcosvb1"
+  },
+  "repository": "https://github.com/marcosvb1/smooth-operator",
+  "license": "MIT",
+  "keywords": [
+    "mise-en-place",
+    "references",
+    "tool-mapping",
+    "api",
+    "steering",
+    "onboarding"
+  ]
+}

@@ -24,7 +24,7 @@ Claude Code:
 
 ```bash
 /plugin marketplace add marcosvb1/smooth-operator
-/plugin install mise-en-place@smooth-operator
+/plugin install smooth-operator@smooth-operator
 ```
 
 Any agent that reads Agent Skills (Claude Code, Codex, Gemini CLI, Cursor and others):
@@ -52,11 +52,11 @@ references/<tool>/
 - **Read-only mapping.** Writes are recorded only from a dry-run, from something you already asked for, or from a reversible test you approve.
 - **No credentials and no personal data** in a map, ever: it stores environment variable names, IDs and structure, never records about people.
 
-Works in Claude Code, Cowork and claude.ai. Full details in the [skill README](skills/mise-en-place/README.md).
+Works in Claude Code, Cowork and claude.ai. Full details in the [skill README](plugins/smooth-operator/skills/mise-en-place/README.md).
 
 ### How it's tested
 
-The skill ships with a [trigger eval](skills/mise-en-place/evals/README.md): 68 cases in English and Portuguese, 33 that should fire the skill and 35 near misses that shouldn't (one-off questions, day-to-day operation, the cooking meaning of "mise en place"), with a holdout set kept out of description edits. Graders are deterministic, so you can rerun it with `claude plugin eval`.
+The skill ships with a [trigger eval](plugins/smooth-operator/evals/README.md): 68 cases in English and Portuguese, 33 that should fire the skill and 35 near misses that shouldn't (one-off questions, day-to-day operation, the cooking meaning of "mise en place"), with a holdout set kept out of description edits. Graders are deterministic, so you can rerun it with `claude plugin eval`.
 
 ## More in this marketplace
 
