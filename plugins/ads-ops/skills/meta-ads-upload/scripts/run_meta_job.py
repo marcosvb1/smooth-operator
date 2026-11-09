@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unified runner for Meta Ads create/update/audit/duplicate jobs."""
+"""Runner for Meta Ads jobs. The input file's job_type picks the job (see JOBS)."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
-from meta_ads_core import COPY_LEVELS
 from meta_ads_core import MetaAdsClient
 from meta_ads_core import MetaAdsError
 from meta_ads_core import load_company_context
@@ -35,7 +34,6 @@ def job_items(payload: dict[str, Any]) -> list[dict[str, Any]]:
 def run_items(
     client: MetaAdsClient,
     payload: dict[str, Any],
-    job_type: str,
     seed: dict[str, str],
     job: Callable[[MetaAdsClient, dict[str, Any]], dict[str, Any]],
 ) -> dict[str, Any]:
@@ -47,29 +45,30 @@ def run_items(
         try:
             row.update(job(client, item))
             row["status"] = "ok"
+        except KeyError as exc:
+            row.update(status="error", error=f"missing field {exc.args[0]!r}")
         except Exception as exc:
             row.update(status="error", error=str(exc))
         rows.append(row)
     return {
-        "job_type": job_type,
         "ok": sum(1 for r in rows if r["status"] == "ok"),
         "error": sum(1 for r in rows if r["status"] != "ok"),
         "items": rows,
     }
 
 
-def _build_output_path(output: str | None, mode: str, company: str) -> Path:
+def _build_output_path(output: str | None, job_type: str, company: str) -> Path:
     if output:
         return Path(output)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     runs_dir = Path(os.getenv("ADS_OPS_RUNS_DIR", "ads-ops-runs")) / "meta"
-    return runs_dir / f"{company}_{mode}_{stamp}.json"
+    return runs_dir / f"{company}_{job_type or 'unknown'}_{stamp}.json"
 
 
 def run_audit(client: MetaAdsClient, payload: dict[str, Any]) -> dict[str, Any]:
     campaign_id = payload.get("campaign_id")
     if not campaign_id:
-        raise MetaAdsError("audit mode requires 'campaign_id'")
+        raise MetaAdsError("audit requires 'campaign_id'")
 
     adsets = client.get_campaign_adsets(str(campaign_id))
     next_number = client.get_next_adset_number(str(campaign_id))
@@ -177,53 +176,33 @@ def ad_creative_update(client: MetaAdsClient, item: dict[str, Any]) -> dict[str,
 
 def duplicate(level: str) -> Callable[[MetaAdsClient, dict[str, Any]], dict[str, Any]]:
     """Clone item["id"] with Meta's /copies endpoint (see MetaAdsClient.copy)."""
+    return lambda client, item: client.copy(level, str(item["id"]), item)
 
-    def job(client: MetaAdsClient, item: dict[str, Any]) -> dict[str, Any]:
-        data = client.copy(level, str(item["id"]), item)
-        result = COPY_LEVELS[level]["result"]
-        row = {result: data.get(result)}
-        if COPY_LEVELS[level]["children"]:
-            row["ad_object_ids"] = data.get("ad_object_ids", [])
-        return row
 
-    return job
+def items_job(
+    seed: dict[str, str], job: Callable[[MetaAdsClient, dict[str, Any]], dict[str, Any]]
+) -> Callable[[MetaAdsClient, dict[str, Any]], dict[str, Any]]:
+    return lambda client, payload: run_items(client, payload, seed, job)
 
 
 AD_SEED = {"ad_name": "ad_name", "adset_id": "adset_id"}
-CREATE_JOBS = {
-    "video_ads": (AD_SEED, video_ad),
-    "image_ads": (AD_SEED, image_ad),
-    "adsets": ({"campaign_id": "campaign_id", "requested_name": "name"}, adset),
-    "existing_post_ads": ({**AD_SEED, "post_id": "post_id"}, existing_post_ad),
+# job_type -> job. Each template in ../templates is named after its job_type.
+JOBS: dict[str, Callable[[MetaAdsClient, dict[str, Any]], dict[str, Any]]] = {
+    "audit": run_audit,
+    "adsets": items_job({"campaign_id": "campaign_id", "requested_name": "name"}, adset),
+    "video_ads": items_job(AD_SEED, video_ad),
+    "image_ads": items_job(AD_SEED, image_ad),
+    "existing_post_ads": items_job({**AD_SEED, "post_id": "post_id"}, existing_post_ad),
+    "update_ads": items_job({"ad_id": "ad_id"}, ad_creative_update),
+    "duplicate_campaigns": items_job({"source_id": "id"}, duplicate("campaigns")),
+    "duplicate_adsets": items_job({"source_id": "id"}, duplicate("adsets")),
+    "duplicate_ads": items_job({"source_id": "id"}, duplicate("ads")),
 }
-
-
-def run_create(client: MetaAdsClient, payload: dict[str, Any]) -> dict[str, Any]:
-    job_type = str(payload.get("job_type", "")).strip().lower()
-    if job_type not in CREATE_JOBS:
-        raise MetaAdsError(f"create mode requires job_type in [{', '.join(CREATE_JOBS)}]")
-    seed, job = CREATE_JOBS[job_type]
-    return run_items(client, payload, job_type, seed, job)
-
-
-def run_update(client: MetaAdsClient, payload: dict[str, Any]) -> dict[str, Any]:
-    return run_items(client, payload, "ad_creative_update", {"ad_id": "ad_id"}, ad_creative_update)
-
-
-def run_duplicate(client: MetaAdsClient, payload: dict[str, Any]) -> dict[str, Any]:
-    """Duplicate campaigns, adsets or ads server-side; each item needs the source "id"."""
-    level = str(payload.get("job_type", "")).strip().lower()
-    if level not in COPY_LEVELS:
-        raise MetaAdsError(f"duplicate mode requires job_type in [{', '.join(COPY_LEVELS)}]")
-    return run_items(client, payload, f"duplicate_{level}", {"source_id": "id"}, duplicate(level))
-
-
-MODES = {"audit": run_audit, "create": run_create, "update": run_update, "duplicate": run_duplicate}
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run Meta Ads job (create/update/audit/duplicate)"
+        description="Run the Meta Ads job named by the input's job_type: " + ", ".join(JOBS)
     )
     parser.add_argument(
         "--profile",
@@ -232,9 +211,6 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Profile name from the ads-ops config (see /ads-ops:setup). "
         "Defaults to meta.default_profile, then env vars.",
-    )
-    parser.add_argument(
-        "--mode", required=True, choices=list(MODES)
     )
     parser.add_argument("--input", required=True, help="Path to JSON input file")
     parser.add_argument("--output", help="Path to JSON output file")
@@ -267,48 +243,41 @@ def find_placeholders(value: Any, path: str = "$") -> list[str]:
 def main() -> int:
     args = parse_args()
     payload = load_input(Path(args.input))
+    job_type = str(payload.get("job_type", "")).strip().lower()
+    report: dict[str, Any] = {
+        "profile": args.company,
+        "job_type": job_type,
+        "dry_run": not args.execute,
+    }
+    output_path = _build_output_path(args.output, job_type, args.company or "default")
+
+    def finish(code: int) -> int:
+        write_json_report(output_path, report)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        return code
+
     try:
+        if job_type not in JOBS:
+            raise MetaAdsError(f"job_type must be one of: {', '.join(JOBS)}")
         placeholders = find_placeholders(payload)
         if placeholders:
             raise MetaAdsError(
                 "Input still has unfilled placeholders at: " + ", ".join(placeholders)
             )
         context = load_company_context(args.company, overrides=payload.get("context"))
-    except (MetaAdsError, ValueError) as exc:
-        print(json.dumps({"status": "error", "error": str(exc)}, ensure_ascii=False, indent=2))
-        return 1
-    client = MetaAdsClient(context=context, dry_run=not args.execute)
-
-    output_path = _build_output_path(args.output, args.mode, context.company)
-
-    try:
-        result = MODES[args.mode](client, payload)
+        report.update(profile=context.company, ad_account=context.ad_account)
+        output_path = _build_output_path(args.output, job_type, context.company)
+        client = MetaAdsClient(context=context, dry_run=not args.execute)
+        result = JOBS[job_type](client, payload)
     except Exception as exc:
-        report = {
-            "profile": context.company,
-            "mode": args.mode,
-            "dry_run": not args.execute,
-            "status": "error",
-            "error": str(exc),
-        }
-        write_json_report(output_path, report)
-        print(json.dumps(report, ensure_ascii=False, indent=2))
-        return 1
+        report.update(status="error", error=str(exc))
+        return finish(1)
 
     failed = int(result.get("error") or 0)
-    report = {
-        "profile": context.company,
-        "ad_account": context.ad_account,
-        "mode": args.mode,
-        "dry_run": not args.execute,
-        "status": "partial" if failed else "ok",
-        "result": result,
-    }
+    report.update(status="partial" if failed else "ok", result=result)
     if not args.execute:
         report["planned_calls"] = client.planned_calls
-    write_json_report(output_path, report)
-    print(json.dumps(report, ensure_ascii=False, indent=2))
-    return 2 if failed else 0
+    return finish(2 if failed else 0)
 
 
 if __name__ == "__main__":

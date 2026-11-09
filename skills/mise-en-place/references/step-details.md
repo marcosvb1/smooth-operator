@@ -48,7 +48,7 @@ python3 <skill-folder>/scripts/check_secrets.py [--public] <destination>/<tool>
   - Credentials: JWTs, bearer and basic auth, cookies, `*_token`/`*_secret` with a value, keys with known prefixes, webhook URLs with secrets, hex tokens and long high-entropy strings.
   - Personal data: emails (Unicode included), phone numbers in international format or next to a phone label in many languages, payment cards (Luhn), IBANs (checksum), US SSNs, Brazilian CPF/CNPJ, and national IDs next to their label (SSN, NINO, DNI, NIE, Aadhaar, PAN, SIN, TFN, CURP, RFC…).
   - It reads UTF-8 and UTF-16, scans every file regardless of extension, and lists the files it had to skip.
-  - It skips `*.local.*` files, which hold the real IDs by convention (`--include-local` scans them too).
+  - `*.local.*` files hold the real IDs by convention, so `--public` doesn't flag IDs there; credentials and personal data are flagged everywhere.
   - When `gitleaks` or `trufflehog` is installed it runs them as well (`--no-external` to skip).
   - With `--public`, it also flags real IDs (`act_…`, `gid://…`, numbers with 15+ digits). Use it when the destination is a public repo.
   - Names and addresses have no reliable pattern: re-read the samples yourself.

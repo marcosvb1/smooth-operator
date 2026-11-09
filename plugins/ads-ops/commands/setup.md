@@ -35,7 +35,7 @@ Configure os perfis de conta usados pelas skills `meta-ads-upload` e `tiktok-ads
 }
 ```
 
-7. **Nunca** grave tokens nesse arquivo. No fim, diga quais variáveis de ambiente o usuário precisa definir no shell ou no gerenciador de segredos dele, com o nome do perfil em maiúsculas e `-` trocado por `_`:
+7. **Nunca** grave tokens nesse arquivo. No fim, diga quais variáveis de ambiente o usuário precisa definir no shell ou no gerenciador de segredos dele, com o nome do perfil em maiúsculas, com todo caractere que não é letra nem número trocado por `_`:
    - Meta: `META_ACCESS_TOKEN_<PERFIL>` (ou `META_ACCESS_TOKEN` para todas as contas)
    - TikTok: `TIKTOK_ACCESS_TOKEN_<PERFIL>` (ou `TIKTOK_ACCESS_TOKEN`)
 

@@ -1,5 +1,5 @@
 {
-  "job_type": "adsets",
+  "job_type": "duplicate_adsets",
   "deep_copy": true,
   "rename_strategy": "DEEP_RENAME",
   "rename_suffix": " - Copy",

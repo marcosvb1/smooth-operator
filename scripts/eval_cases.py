@@ -30,7 +30,9 @@ def row(case):
         g, _ = frontmatter(grader.read_text(encoding="utf-8"))
         minimum = re.search(r"^min:\s*(\d+)", g, re.M)
         skill = re.search(r'"\(\?:\[\\w-\]\+:\)\?([\w-]+)"', g)
-        if minimum and int(minimum.group(1)) >= 1 and skill:
+        if minimum and int(minimum.group(1)) >= 1:
+            if not skill:
+                raise SystemExit(f"{grader}: min >= 1 but no skill name found in input_match")
             fires.append(skill.group(1))
     prompt = " ".join(prompt.split()).replace("|", "\\|")
     return f"| `{case.name}` | {', '.join(fires) or 'none'} | {tags} | {prompt} |\n"

@@ -16,6 +16,10 @@ import requests
 
 
 CONFIG_ENV = "ADS_OPS_CONFIG"
+DEFAULT_API_VERSION = "v25.0"
+TIMEOUT_SECONDS = 30
+MAX_RETRIES = 3  # só GET repete
+PACING_SECONDS = 0.3  # pausa depois de cada chamada bem-sucedida
 CONFIG_FILENAME = "ads-ops.local.json"
 
 
@@ -30,7 +34,7 @@ class CompanyContext:
     ad_account: str
     page_id: str
     ig_user_id: str
-    api_version: str = "v25.0"
+    api_version: str
 
     @property
     def base_url(self) -> str:
@@ -108,7 +112,7 @@ def load_company_context(
     api_version = str(
         extra.get("api_version")
         or defaults.get("api_version")
-        or os.getenv("META_API_VERSION", "v25.0")
+        or os.getenv("META_API_VERSION", DEFAULT_API_VERSION)
     )
 
     if not token:
@@ -156,19 +160,9 @@ COPY_DEFAULTS = {"deep_copy": True, "rename_strategy": "DEEP_RENAME", "status_op
 
 
 class MetaAdsClient:
-    def __init__(
-        self,
-        context: CompanyContext,
-        dry_run: bool = True,
-        timeout_seconds: int = 30,
-        max_retries: int = 3,
-        sleep_seconds: float = 0.3,
-    ) -> None:
+    def __init__(self, context: CompanyContext, dry_run: bool = True) -> None:
         self.context = context
         self.dry_run = dry_run
-        self.timeout_seconds = timeout_seconds
-        self.max_retries = max_retries
-        self.sleep_seconds = sleep_seconds
         self.planned_calls: list[dict[str, Any]] = []
 
     def _request(
@@ -186,7 +180,7 @@ class MetaAdsClient:
         is_get = method == "GET"
 
         last_error: str | None = None
-        for attempt in range(1, self.max_retries + 1):
+        for attempt in range(1, MAX_RETRIES + 1):
             try:
                 response = requests.request(
                     method=method,
@@ -195,12 +189,12 @@ class MetaAdsClient:
                     data=None if is_get else payload,
                     files=files,
                     headers=headers,
-                    timeout=self.timeout_seconds,
+                    timeout=TIMEOUT_SECONDS,
                 )
             except requests.RequestException as exc:
                 last_error = str(exc).replace(self.context.access_token, "***")
                 # Só GET repete sozinho: um POST que deu timeout pode ter gravado.
-                if is_get and attempt < self.max_retries:
+                if is_get and attempt < MAX_RETRIES:
                     time.sleep(attempt)
                     continue
                 raise MetaAdsError(f"Network error for {path}: {last_error}") from exc
@@ -212,15 +206,14 @@ class MetaAdsClient:
                 raise MetaAdsError(f"Invalid JSON response for {path}: {text}") from exc
 
             if response.status_code < 400 and "error" not in data:
-                if self.sleep_seconds:
-                    time.sleep(self.sleep_seconds)
+                time.sleep(PACING_SECONDS)
                 return data
 
             err = data.get("error", {})
             err_message = err.get("message", response.text[:400])
             last_error = f"{response.status_code} {err_message}"
             retriable = response.status_code in {429, 500, 502, 503, 504}
-            if retriable and is_get and attempt < self.max_retries:
+            if retriable and is_get and attempt < MAX_RETRIES:
                 time.sleep(attempt)
                 continue
             raise MetaAdsError(f"Meta API error on {path}: {last_error}")
@@ -263,16 +256,15 @@ class MetaAdsClient:
         ]
         return max(numbers, default=0) + 1
 
-    def upload_image_from_path(self, image_path: str, name: str | None = None) -> str:
+    def upload_image_from_path(self, image_path: str) -> str:
         if self.dry_run:
-            safe_name = (name or Path(image_path).name or "image").replace(" ", "_")
-            return f"dry_hash_{safe_name}"
+            return f"dry_hash_{Path(image_path).name.replace(' ', '_')}"
 
         path = Path(image_path)
         if not path.exists():
             raise MetaAdsError(f"Image not found: {image_path}")
 
-        filename = name or path.name
+        filename = path.name
         with path.open("rb") as handle:
             data = self._write(
                 f"{self.context.ad_account}/adimages",
@@ -285,19 +277,18 @@ class MetaAdsClient:
             raise MetaAdsError(f"Image hash missing for {filename}")
         return str(image["hash"])
 
-    def upload_image_from_url(self, image_url: str, name: str | None = None) -> str:
+    def upload_image_from_url(self, image_url: str) -> str:
         if self.dry_run:
-            safe_name = (name or Path(image_url).name or "image").replace(" ", "_")
-            return f"dry_hash_{safe_name}"
+            return f"dry_hash_{(Path(image_url).name or 'image').replace(' ', '_')}"
 
-        with requests.get(image_url, timeout=self.timeout_seconds) as response:
+        with requests.get(image_url, timeout=TIMEOUT_SECONDS) as response:
             response.raise_for_status()
             suffix = Path(image_url).suffix or ".png"
             with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temp:
                 temp.write(response.content)
                 temp_path = Path(temp.name)
         try:
-            return self.upload_image_from_path(str(temp_path), name=name)
+            return self.upload_image_from_path(str(temp_path))
         finally:
             temp_path.unlink(missing_ok=True)
 
@@ -478,13 +469,12 @@ class MetaAdsClient:
             params["tracking_specs"] = json.dumps(tracking_specs)
         return str(self._write(f"{self.context.ad_account}/ads", params)["id"])
 
-    def update_ad_creative(self, ad_id: str, creative_id: str) -> str:
+    def update_ad_creative(self, ad_id: str, creative_id: str) -> None:
         data = self._write(
             ad_id, {"creative": json.dumps({"creative_id": creative_id})}, id_key=None
         )
         if data.get("success") is False:
             raise MetaAdsError(f"Failed to update ad {ad_id}")
-        return ad_id
 
     def copy(self, level: str, source_id: str, options: dict[str, Any]) -> dict[str, Any]:
         """Server-side clone via POST /{source_id}/copies (Meta keeps pixels, audiences
@@ -492,6 +482,7 @@ class MetaAdsClient:
         rename_strategy/prefix/suffix, status_option, the parent id and, for levels with
         children, deep_copy, start_time and end_time. Missing ones use COPY_DEFAULTS.
         Limits: deep copy of a campaign clones at most 3 adsets synchronously, 51 async.
+        Returns the report row: the copied id and, for levels with children, ad_object_ids.
         """
         spec = COPY_LEVELS[level]
         keys = ["rename_strategy", "rename_prefix", "rename_suffix", "status_option"]
@@ -503,4 +494,8 @@ class MetaAdsClient:
         params = {k: str(merged[k]) for k in keys if merged.get(k) is not None}
         if "deep_copy" in params:
             params["deep_copy"] = str(bool(merged["deep_copy"])).lower()
-        return self._write(f"{source_id}/copies", params, id_key=spec["result"])
+        data = self._write(f"{source_id}/copies", params, id_key=spec["result"])
+        row = {spec["result"]: data.get(spec["result"])}
+        if spec["children"]:
+            row["ad_object_ids"] = data.get("ad_object_ids", [])
+        return row

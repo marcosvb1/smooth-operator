@@ -1,5 +1,6 @@
 {
   "_comment": "Opcional: 'context' sobrescreve o perfil e as env vars só neste job. Sem ele, vale o perfil (--profile) ou as env vars META_*.",
+  "job_type": "update_ads",
   "url_tags": "utm_source={{site_source_name}}&utm_medium=ppc&utm_campaign={{campaign.name}}&utm_content={{ad.name}}&placement={{placement}}",
   "items": [
     {

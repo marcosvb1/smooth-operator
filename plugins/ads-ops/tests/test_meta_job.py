@@ -21,11 +21,8 @@ import requests  # noqa: E402
 import meta_ads_core  # noqa: E402
 import run_meta_job  # noqa: E402
 
-MODES = {
-    "adsets": "create", "image_ads": "create", "video_ads": "create", "existing_post_ads": "create",
-    "audit": "audit", "update_ads": "update",
-    "duplicate_campaigns": "duplicate", "duplicate_adsets": "duplicate", "duplicate_ads": "duplicate",
-}
+TEMPLATES = sorted(p.name.replace(".template.json", "") for p in (SKILL / "templates").glob("*.template.json"))
+BASE = None  # set in main() from the context, so the version lives only in meta_ads_core
 SENT = []
 
 
@@ -41,7 +38,7 @@ class Response:
 
 
 def fake_graph(method, url, params=None, data=None, files=None, headers=None, timeout=None):
-    path = url.split("/v25.0/", 1)[1]
+    path = url.removeprefix(BASE + "/")
     SENT.append((method, path, params if method == "GET" else data))
     if method == "GET":
         if path.endswith("/adsets"):
@@ -52,12 +49,12 @@ def fake_graph(method, url, params=None, data=None, files=None, headers=None, ti
     return Response({"id": f"id{len(SENT)}"})
 
 
-def run(name, execute):
+def run(name, execute, fill="42"):
     raw = (SKILL / "templates" / f"{name}.template.json").read_text()
     with tempfile.TemporaryDirectory() as tmp:
         inp, out = Path(tmp, "in.json"), Path(tmp, "out.json")
-        inp.write_text(re.sub(r"<[A-Z0-9_]+>", "42", raw))
-        sys.argv = ["run_meta_job", "--mode", MODES[name], "--input", str(inp), "--output", str(out)]
+        inp.write_text(re.sub(r"<[A-Z0-9_]+>", fill, raw) if fill else raw)
+        sys.argv = ["run_meta_job", "--input", str(inp), "--output", str(out)]
         sys.argv += ["--execute"] if execute else []
         SENT.clear()
         with contextlib.redirect_stdout(io.StringIO()):
@@ -73,16 +70,26 @@ def main():
     os.environ["HOME"] = home
     os.environ.pop("ADS_OPS_CONFIG", None)
     os.environ.update(META_ACCESS_TOKEN="dummy", META_AD_ACCOUNT="123", META_PAGE_ID="9", META_IG_USER_ID="77")
+    global BASE
+    BASE = meta_ads_core.load_company_context().base_url
     failures = []
 
     def check(cond, msg):
         if not cond:
             failures.append(msg)
 
-    for name in MODES:
+    check(sorted(run_meta_job.JOBS) == TEMPLATES, f"one template per job_type: {TEMPLATES}")
+    for name in TEMPLATES:
         rc, report, sent = run(name, execute=False)
-        check(report["status"] == "ok", f"{name}: dry-run status {report['status']}")
+        check(report["status"] == "ok" and report["job_type"] == name, f"{name}: dry-run {report}")
         check(all(method == "GET" for method, _, _ in sent), f"{name}: dry-run sent a write")
+
+    rc, report, sent = run("image_ads", execute=False, fill=None)
+    check(rc == 1 and "placeholders" in report["error"] and not sent, "unfilled template: error report, no calls")
+
+    client = meta_ads_core.MetaAdsClient(meta_ads_core.load_company_context(), dry_run=True)
+    result = run_meta_job.JOBS["adsets"](client, {"campaign_id": "42", "items": [{"name": "x"}]})
+    check(result["items"][0]["error"] == "missing field 'daily_budget'", f"missing field: {result}")
 
     rc, report, _ = run("audit", execute=False)
     check(report["result"]["next_adset_number"] == 8, "audit: next number after '07 - ...' is 8")
