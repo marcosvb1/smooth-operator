@@ -116,12 +116,12 @@ def validate(wrapper, inventory=None):
     # text/positions are STRINGIFIED json
     try:
         text = json.loads(model["text"])
-    except Exception as e:  # noqa: BLE001
+    except json.JSONDecodeError as e:
         f.err("TEXT_PARSE", f"model.text is not valid JSON string: {e}", "$.model.text")
         return f
     try:
         positions = json.loads(model["positions"])
-    except Exception as e:  # noqa: BLE001
+    except json.JSONDecodeError as e:
         f.err("POS_PARSE", f"model.positions is not valid JSON string: {e}", "$.model.positions")
         return f
     if not isinstance(text, dict):

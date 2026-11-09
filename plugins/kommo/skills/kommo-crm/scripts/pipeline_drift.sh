@@ -43,16 +43,16 @@ fi
 API_NAME=$(echo "$API_DATA" | jq -r '.name')
 # Stages com `id|name|sort|editable`
 API_TMP=$(mktemp)
+MEM_TMP=$(mktemp)
+trap 'rm -f "$API_TMP" "$MEM_TMP"' EXIT
 if ! kommo_get "${DOMAIN}/api/v4/leads/pipelines/$PIPE/statuses" \
   | jq -r '._embedded.statuses | sort_by(.sort) | .[] | "\(.id)|\(.name)|\(.sort)|\(.is_editable)"' > "$API_TMP"; then
-  rm -f "$API_TMP"
   exit 2
 fi
 API_COUNT=$(grep -c . "$API_TMP" || true)
 
 # ---- 2. Estado do baseline: extrair a última tabela `sort | id | nome`
 MEM_NAME=$(awk -v want=name -f "$SCRIPT_DIR/extract_pipeline_baseline.awk" "$MEM_FILE")
-MEM_TMP=$(mktemp)
 awk -f "$SCRIPT_DIR/extract_pipeline_baseline.awk" "$MEM_FILE" > "$MEM_TMP"
 MEM_COUNT=$(grep -c "|" "$MEM_TMP" || true)
 
@@ -73,9 +73,9 @@ elif [[ "${API_NAME}" != "${MEM_NAME}" ]]; then
 fi
 
 # 3.2 Adições/renomeações (itera API stages)
-# Normaliza nome: stripa " (SYSTEM)" suffix e whitespace; lowercase via tr (bash 3 safe)
+# Compara nomes sem espaço nas pontas e sem diferença de caixa (tr: bash 3).
 normalize_name() {
-  echo "$1" | sed -E 's/[[:space:]]*\(SYSTEM\)[[:space:]]*$//' | sed -E 's/^[[:space:]]+|[[:space:]]+$//' | tr '[:upper:]' '[:lower:]'
+  echo "$1" | sed -E 's/^[[:space:]]+|[[:space:]]+$//' | tr '[:upper:]' '[:lower:]'
 }
 
 ADDED=""
@@ -111,13 +111,6 @@ done < "$MEM_TMP"
 [[ -n "$REMOVED" ]] && REPORT+="### ➖ Estágios removidos da API (órfãos no baseline)\n${REMOVED}\n"
 [[ -n "$RENAMED" ]] && REPORT+="### ✏️ Estágios renomeados\n${RENAMED}\n"
 
-# 3.4 Contagem
-if [[ "$API_COUNT" -ne "$MEM_COUNT" ]]; then
-  REPORT+="### 📊 Contagem divergente\n"
-  REPORT+="- API tem **${API_COUNT}** estágios, baseline diz **${MEM_COUNT}**\n\n"
-  DRIFT=1
-fi
-
 if [[ $DRIFT -eq 0 ]]; then
   REPORT+="### ✅ Sincronizado"
   REPORT+=" — ${API_COUNT} estágios em ambos, nomes coincidem.\n\n"
@@ -129,7 +122,4 @@ if [[ $DRIFT -eq 1 ]]; then
 fi
 
 echo -e "$REPORT"
-
-# Cleanup
-rm -f "$API_TMP" "$MEM_TMP"
 exit $DRIFT

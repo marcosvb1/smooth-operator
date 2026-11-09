@@ -31,6 +31,17 @@ ROUTES = {
     "/api/v4/contacts/custom_fields": [page("custom_fields", [
         {"id": 8, "name": "CPF", "type": "text", "enums": None}], False)],
     "/api/v4/contacts": [page("contacts", [{"id": 1}], True), page("contacts", [{"id": 2}], True)],
+    "/api/v4/leads/pipelines/10": [{"id": 10, "name": "Funil"}],
+    "/api/v4/leads/pipelines/10/statuses": [{"_embedded": {"statuses": [
+        {"id": 100, "name": "Incoming leads", "sort": 10, "is_editable": False},
+        {"id": 101, "name": "A", "sort": 20, "is_editable": True},
+        {"id": 102, "name": "B", "sort": 30, "is_editable": True},
+        {"id": 142, "name": "Ganho", "sort": 10000, "is_editable": False}]}}],
+}
+# /api/v4/leads por etapa do pipeline 10: status_id -> páginas de leads
+STAGE_LEADS = {
+    "101": [page("leads", [{"id": 1}, {"id": 2}], True), page("leads", [{"id": 3}], False)],
+    "142": [page("leads", [{"id": 4}], False)],
 }
 
 
@@ -58,6 +69,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
         n = int(query.get("page", ["1"])[0])
         pages = ROUTES.get(url.path, [])
+        if url.path == "/api/v4/leads" and query.get("filter[statuses][0][pipeline_id]") == ["10"]:
+            pages = STAGE_LEADS.get(query.get("filter[statuses][0][status_id]", [""])[0], [])
         if n > len(pages):
             self.send_response(204)
             self.end_headers()

@@ -24,7 +24,7 @@ Formato canônico dos três modos de relatório da skill `kommo-crm`.
       "sort": 10,
       "editable": false,
       "leads_count": 0,
-      "pct_of_active": 0
+      "pct_of_active": null
     },
     {
       "stage_id": 7000002,
@@ -42,7 +42,7 @@ Formato canônico dos três modos de relatório da skill `kommo-crm`.
 
 ```
 pipeline_id,pipeline_name,sort,stage_id,stage_name,editable,leads_count,pct_of_active
-1234567,"Funil Comercial",10,7000001,"Incoming leads",false,0,0
+1234567,"Funil Comercial",10,7000001,"Incoming leads",false,0,
 1234567,"Funil Comercial",20,7000002,"novo lead",true,666,61
 ...
 ```
@@ -101,9 +101,6 @@ Output direto no stdout (markdown bullets). Não gera arquivo. Estrutura:
 
 **API:** `Funil Comercial` — 13 estágios  
 **Baseline:** `Funil Comercial` — 10 estágios (`kommo-baselines/cliente-a_1234567.md`)
-
-### 📊 Contagem divergente
-- API tem **13** estágios, baseline diz **10**
 
 ### ➕ Estágios adicionados na API (ausentes do baseline)
 - `7000011` → `Pré-contrato` (sort 70)

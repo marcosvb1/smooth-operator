@@ -57,7 +57,7 @@ echo "  pipeline: $PIPE_NAME" >&2
 
 # ---- Statuses (sort)
 echo "→ GET $API/leads/pipelines/$PIPE/statuses" >&2
-STATUSES_JSON=$(kommo_get "$API/leads/pipelines/$PIPE/statuses?with=descriptions" | jq '._embedded.statuses | sort_by(.sort)')
+STATUSES_JSON=$(kommo_get "$API/leads/pipelines/$PIPE/statuses" | jq '._embedded.statuses | sort_by(.sort)')
 STAGE_COUNT=$(echo "$STATUSES_JSON" | jq 'length')
 echo "  $STAGE_COUNT estágios" >&2
 
@@ -84,7 +84,7 @@ for ((i=0; i<STAGE_COUNT; i++)); do
   SEDIT=$(echo "$STATUSES_JSON" | jq -r ".[$i].is_editable")
   SSORT=$(echo "$STATUSES_JSON" | jq -r ".[$i].sort")
 
-  kommo_stage_leads "$PIPE" "$SID" with=source_id > "$PAGES_FILE"
+  kommo_stage_leads "$PIPE" "$SID" > "$PAGES_FILE"
   COUNT=0
   while IFS= read -r PAGE_LEADS; do
     COUNT=$((COUNT + $(echo "$PAGE_LEADS" | jq 'length')))

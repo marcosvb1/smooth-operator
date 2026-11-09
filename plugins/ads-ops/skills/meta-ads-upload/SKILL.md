@@ -116,7 +116,7 @@ Tudo fica em `${CLAUDE_PLUGIN_ROOT}/skills/meta-ads-upload/`: `scripts/run_meta_
 
 ### Segurança do runner
 
-- Sempre começar em dry-run (default). No dry-run as leituras (GET) rodam de verdade, então `audit` e a numeração automática usam dados reais; as escritas não são enviadas e aparecem em `planned_calls` no relatório, com método, caminho e parâmetros. O `planned_calls` é o plano a mostrar ao usuário, com uma lacuna: uploads de mídia não aparecem nele (no dry-run eles devolvem IDs fictícios), então liste os arquivos a subir à parte.
+- Sempre começar em dry-run (default). No dry-run as leituras (GET) rodam de verdade, então `audit` e a numeração automática usam dados reais; as escritas não são enviadas e aparecem em `planned_calls` no relatório, com método, caminho e parâmetros. O `planned_calls` é o plano a mostrar ao usuário, uploads de mídia incluídos (no dry-run eles devolvem IDs fictícios; imagens por URL são baixadas para conferir o arquivo).
 - `--execute` só com o payload revisado e o OK do usuário.
 - Nunca gravar token em config, template ou JSON de input.
 - O runner só repete GET sozinho. Se um POST falhar por rede ou 5xx, releia (por nome ou `created_time`) antes de reenviar, porque ele pode ter gravado.
@@ -128,8 +128,10 @@ O runner resolve a conta nesta ordem (o primeiro que tiver o valor ganha):
 
 1. `context` dentro do JSON do job (`ad_account`, `page_id`, `ig_user_id`, `api_version`), só quando o usuário pedir outra conta para aquele job
 2. O perfil escolhido com `--profile <nome>` (ou o `default_profile`) no config do ads-ops
-3. Variáveis `META_AD_ACCOUNT_<PERFIL>`, `META_PAGE_ID_<PERFIL>`, `META_IG_USER_ID_<PERFIL>`
-4. Variáveis genéricas `META_AD_ACCOUNT`, `META_PAGE_ID`, `META_IG_USER_ID`, `META_API_VERSION` (default `v25.0`)
+3. Variáveis `META_AD_ACCOUNT_<PERFIL>`, `META_PAGE_ID_<PERFIL>`, `META_IG_USER_ID_<PERFIL>`, `META_API_VERSION_<PERFIL>`
+4. Variáveis genéricas `META_AD_ACCOUNT`, `META_PAGE_ID`, `META_IG_USER_ID`, `META_API_VERSION` (sem nenhuma, vale a versão padrão do runner)
+
+Um `--profile` que não está no config nem tem `META_ACCESS_TOKEN_<PERFIL>` ou `META_AD_ACCOUNT_<PERFIL>` é erro, para não cair nas variáveis genéricas de outra conta.
 
 O token vem só de variável de ambiente: `META_ACCESS_TOKEN_<PERFIL>` ou `META_ACCESS_TOKEN`. `<PERFIL>` é o nome do perfil em maiúsculas, com todo caractere que não é letra nem número trocado por `_` (perfil `cliente-a` → `META_ACCESS_TOKEN_CLIENTE_A`).
 

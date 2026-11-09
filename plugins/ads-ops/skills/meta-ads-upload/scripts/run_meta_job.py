@@ -13,7 +13,8 @@ from typing import Any, Callable
 
 from meta_ads_core import MetaAdsClient
 from meta_ads_core import MetaAdsError
-from meta_ads_core import load_company_context
+from meta_ads_core import adset_number
+from meta_ads_core import load_profile_context
 from meta_ads_core import write_json_report
 
 
@@ -22,13 +23,20 @@ def load_input(path: Path) -> dict[str, Any]:
         return json.load(handle)
 
 
-def job_items(payload: dict[str, Any]) -> list[dict[str, Any]]:
+class Item(dict):
+    """A job item: reading a field it doesn't have is a "missing field" error."""
+
+    def __missing__(self, key: str) -> Any:
+        raise MetaAdsError(f"missing field {key!r}")
+
+
+def job_items(payload: dict[str, Any]) -> list[Item]:
     """Each item with the root fields as defaults: an item field wins, a null is absent."""
     items = payload.get("items")
     if not isinstance(items, list) or not items:
         raise MetaAdsError("Input must include non-empty 'items' list")
     root = {k: v for k, v in payload.items() if k != "items" and v is not None}
-    return [{**root, **{k: v for k, v in item.items() if v is not None}} for item in items]
+    return [Item({**root, **{k: v for k, v in item.items() if v is not None}}) for item in items]
 
 
 def run_items(
@@ -45,8 +53,6 @@ def run_items(
         try:
             row.update(job(client, item))
             row["status"] = "ok"
-        except KeyError as exc:
-            row.update(status="error", error=f"missing field {exc.args[0]!r}")
         except Exception as exc:
             row.update(status="error", error=str(exc))
         rows.append(row)
@@ -57,12 +63,12 @@ def run_items(
     }
 
 
-def _build_output_path(output: str | None, job_type: str, company: str) -> Path:
+def _build_output_path(output: str | None, job_type: str, profile: str) -> Path:
     if output:
         return Path(output)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     runs_dir = Path(os.getenv("ADS_OPS_RUNS_DIR", "ads-ops-runs")) / "meta"
-    return runs_dir / f"{company}_{job_type or 'unknown'}_{stamp}.json"
+    return runs_dir / f"{profile}_{job_type or 'unknown'}_{stamp}.json"
 
 
 def run_audit(client: MetaAdsClient, payload: dict[str, Any]) -> dict[str, Any]:
@@ -71,11 +77,10 @@ def run_audit(client: MetaAdsClient, payload: dict[str, Any]) -> dict[str, Any]:
         raise MetaAdsError("audit requires 'campaign_id'")
 
     adsets = client.get_campaign_adsets(str(campaign_id))
-    next_number = client.get_next_adset_number(str(campaign_id))
     return {
         "campaign_id": campaign_id,
         "adsets_count": len(adsets),
-        "next_adset_number": next_number,
+        "next_adset_number": max(map(adset_number, (a.get("name") for a in adsets)), default=0) + 1,
         "adsets": adsets,
     }
 
@@ -140,12 +145,28 @@ def existing_post_ad(client: MetaAdsClient, item: dict[str, Any]) -> dict[str, A
     return place_ad(client, item, creative_id)
 
 
-def adset(client: MetaAdsClient, item: dict[str, Any]) -> dict[str, Any]:
-    campaign_id = str(item["campaign_id"])
+def run_adsets(client: MetaAdsClient, payload: dict[str, Any]) -> dict[str, Any]:
+    """Create ad sets. Each campaign's highest number is read once and counted up
+    locally, so a dry-run plans the same names --execute will create."""
+    highest: dict[str, int] = {}
+
+    def adset(client: MetaAdsClient, item: dict[str, Any]) -> dict[str, Any]:
+        campaign_id = str(item["campaign_id"])
+        if campaign_id not in highest:
+            names = (a.get("name") for a in client.get_campaign_adsets(campaign_id))
+            highest[campaign_id] = max(map(adset_number, names), default=0)
+        row = create_adset(client, item, campaign_id, highest[campaign_id] + 1)
+        highest[campaign_id] = max(highest[campaign_id], adset_number(row["name"]))
+        return row
+
+    return run_items(client, payload, {"campaign_id": "campaign_id", "requested_name": "name"}, adset)
+
+
+def create_adset(client: MetaAdsClient, item: dict[str, Any], campaign_id: str, next_number: int) -> dict[str, Any]:
     name = item.get("name")
     if item.get("auto_number") or not name:
         template = str(item.get("name_template", "{num:02d} - Novo Adset"))
-        name = template.format(num=client.get_next_adset_number(campaign_id))
+        name = template.format(num=next_number)
     adset_id = client.create_adset(
         campaign_id=campaign_id,
         name=str(name),
@@ -189,7 +210,7 @@ AD_SEED = {"ad_name": "ad_name", "adset_id": "adset_id"}
 # job_type -> job. Each template in ../templates is named after its job_type.
 JOBS: dict[str, Callable[[MetaAdsClient, dict[str, Any]], dict[str, Any]]] = {
     "audit": run_audit,
-    "adsets": items_job({"campaign_id": "campaign_id", "requested_name": "name"}, adset),
+    "adsets": run_adsets,
     "video_ads": items_job(AD_SEED, video_ad),
     "image_ads": items_job(AD_SEED, image_ad),
     "existing_post_ads": items_job({**AD_SEED, "post_id": "post_id"}, existing_post_ad),
@@ -206,8 +227,6 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--profile",
-        "--company",
-        dest="company",
         default=None,
         help="Profile name from the ads-ops config (see /ads-ops:setup). "
         "Defaults to meta.default_profile, then env vars.",
@@ -245,11 +264,11 @@ def main() -> int:
     payload = load_input(Path(args.input))
     job_type = str(payload.get("job_type", "")).strip().lower()
     report: dict[str, Any] = {
-        "profile": args.company,
+        "profile": args.profile,
         "job_type": job_type,
         "dry_run": not args.execute,
     }
-    output_path = _build_output_path(args.output, job_type, args.company or "default")
+    output_path = _build_output_path(args.output, job_type, args.profile or "default")
 
     def finish(code: int) -> int:
         write_json_report(output_path, report)
@@ -264,9 +283,9 @@ def main() -> int:
             raise MetaAdsError(
                 "Input still has unfilled placeholders at: " + ", ".join(placeholders)
             )
-        context = load_company_context(args.company, overrides=payload.get("context"))
-        report.update(profile=context.company, ad_account=context.ad_account)
-        output_path = _build_output_path(args.output, job_type, context.company)
+        context = load_profile_context(args.profile, overrides=payload.get("context"))
+        report.update(profile=context.profile, ad_account=context.ad_account)
+        output_path = _build_output_path(args.output, job_type, context.profile)
         client = MetaAdsClient(context=context, dry_run=not args.execute)
         result = JOBS[job_type](client, payload)
     except Exception as exc:

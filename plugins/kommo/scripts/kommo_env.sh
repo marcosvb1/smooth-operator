@@ -36,6 +36,10 @@ kommo_load_credentials() {
   local cfg="" key domain_var token_var n
 
   cfg=$(kommo_find_config) || cfg=""
+  if [[ -n "$cfg" ]] && ! jq empty "$cfg" 2>/dev/null; then
+    printf 'ERRO: config inválido (não é JSON): %s\n' "$cfg" >&2
+    return 2
+  fi
 
   if [[ -z "$profile" && -n "$cfg" ]]; then
     profile=$(jq -r '.default_profile // empty' "$cfg")
@@ -128,17 +132,6 @@ kommo_get() {
   kommo_request GET "$url"
 }
 
-# O Kommo usa HTTP 204 (corpo vazio) para indicar o fim de algumas coleções.
-kommo_collection_json() {
-  local body="${1:-}"
-  local collection="${2:?nome da coleção obrigatório}"
-  if [[ -z "$body" ]]; then
-    echo '[]'
-  else
-    echo "$body" | jq -c ".\"_embedded\".\"${collection}\" // []"
-  fi
-}
-
 # Limite da API: 7 req/s. Quem faz laço de requisições espera isto entre elas.
 KOMMO_RATE_SLEEP=0.18
 
@@ -152,7 +145,8 @@ kommo_paginate() {
   [[ "$url" == *\?* ]] && sep="&"
   while true; do
     resp=$(kommo_get "${url}${sep}page=${page}") || return 1
-    items=$(kommo_collection_json "$resp" "$collection")
+    [[ -n "$resp" ]] || return 0  # o Kommo responde 204, sem corpo, depois da última página
+    items=$(printf '%s' "$resp" | jq -c --arg c "$collection" '._embedded[$c] // []')
     [[ "$items" == "[]" ]] && return 0
     printf '%s\n' "$items"
     [[ -n "$(printf '%s' "$resp" | jq -r '._links.next.href // empty')" ]] || return 0
@@ -163,8 +157,8 @@ kommo_paginate() {
 
 # Leads de uma etapa, paginados (uma linha por página). O filtro por etapa precisa
 # de pipeline_id e status_id juntos; status_id sozinho é ignorado pela API.
-# Uso: kommo_stage_leads <pipeline_id> <status_id> ["with=source_id"]
+# Uso: kommo_stage_leads <pipeline_id> <status_id>   (cada lead vem com source_id)
 kommo_stage_leads() {
-  local pipe="${1:?pipeline_id obrigatório}" status="${2:?status_id obrigatório}" extra="${3:-}"
-  kommo_paginate "$DOMAIN/api/v4/leads?filter[statuses][0][pipeline_id]=${pipe}&filter[statuses][0][status_id]=${status}${extra:+&$extra}&limit=250" leads
+  local pipe="${1:?pipeline_id obrigatório}" status="${2:?status_id obrigatório}"
+  kommo_paginate "$DOMAIN/api/v4/leads?filter[statuses][0][pipeline_id]=${pipe}&filter[statuses][0][status_id]=${status}&with=source_id&limit=250" leads
 }

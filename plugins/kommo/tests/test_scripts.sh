@@ -73,7 +73,14 @@ KOMMO_DOMAIN_TESTE="http://127.0.0.1:9" \
 KOMMO_ACCESS_TOKEN_TESTE="dummy" \
 bash -ec 'source "$1"; kommo_load_credentials teste; ! kommo_get "$DOMAIN/api/v4/account" >/dev/null 2>&1' _ "$ENV_SH"
 
-bash -ec 'source "$1"; [[ "$(kommo_collection_json "" leads)" == "[]" ]]' _ "$ENV_SH"
+# 7d. Config que não é JSON é erro, mesmo com KOMMO_DOMAIN genérico definido.
+echo '{quebrado' > "$WORK/bad.json"
+set +e
+KOMMO_CONFIG="$WORK/bad.json" KOMMO_DOMAIN="z.kommo.com" KOMMO_ACCESS_TOKEN="dummy" \
+  bash -c 'source "$1"; kommo_load_credentials' _ "$ENV_SH" >/dev/null 2>&1
+RC=$?
+set -e
+[[ "$RC" -eq 2 ]]
 KOMMO_DOMAIN_TESTE="http://127.0.0.1:9" \
 KOMMO_ACCESS_TOKEN_TESTE="dummy" \
 bash -ec 'source "$1"; kommo_load_credentials teste; ! kommo_paginate "$DOMAIN/api/v4/contacts" contacts >/dev/null 2>&1' _ "$ENV_SH"
@@ -102,6 +109,34 @@ INV=$(KOMMO_DOMAIN_TESTE="http://127.0.0.1:$(cat "$PORT_FILE")" KOMMO_ACCESS_TOK
 jq -e '.account_id == 1 and .pipelines[0].statuses[1].id == 142 and .users[0].id == 5
   and .lead_custom_fields[0].enums[0].id == 70 and .contact_custom_fields[0].enums == []
   and .chat_sources.confirmed == []' <<<"$INV" >/dev/null
+
+# 7e. Snapshot e drift de ponta a ponta contra o servidor falso (pipeline 10).
+export KOMMO_DOMAIN_TESTE="$FAKE" KOMMO_ACCESS_TOKEN_TESTE="dummy"
+REPORT_DIR="$WORK/snap" "$SCRIPT_DIR/funnel_snapshot.sh" teste 10 >/dev/null 2>&1
+jq -e '._meta.total_active == 3 and ._meta.total_terminal == 1
+  and ([.stages[] | {stage_id, leads_count, pct_of_active}] == [
+    {stage_id: 100, leads_count: 0, pct_of_active: null}, {stage_id: 101, leads_count: 3, pct_of_active: 100},
+    {stage_id: 102, leads_count: 0, pct_of_active: 0}, {stage_id: 142, leads_count: 1, pct_of_active: null}])' \
+  "$WORK"/snap/kommo_teste_10_*.json >/dev/null
+mkdir -p "$WORK/kommo-baselines"
+cat > "$WORK/kommo-baselines/teste_10.md" <<'MD'
+**Pipeline:** `Funil`
+
+| sort | id | nome |
+|---:|---:|---|
+| 10 | 100 | Incoming leads |
+| 20 | 101 | a |
+| 30 | 102 | B |
+| 10000 | 142 | Ganho |
+MD
+"$SCRIPT_DIR/pipeline_drift.sh" teste 10 >/dev/null
+sed -i.bak 's/| 30 | 102 | B |/| 30 | 102 | Antigo |/' "$WORK/kommo-baselines/teste_10.md"
+set +e
+DRIFT_OUT=$("$SCRIPT_DIR/pipeline_drift.sh" teste 10)
+RC=$?
+set -e
+[[ "$RC" -eq 1 ]] && grep -q 'baseline="Antigo" → API="B"' <<<"$DRIFT_OUT"
+unset KOMMO_DOMAIN_TESTE KOMMO_ACCESS_TOKEN_TESTE
 
 # 8. Baseline com tabela histórica e tabela atual: a última tabela vence.
 BASELINE="$WORK/kommo-baselines/teste_1000.md"

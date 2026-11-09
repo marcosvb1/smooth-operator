@@ -10,7 +10,11 @@ run bash "$ROOT/plugins/kommo/tests/test_scripts.sh"
 run bash "$ROOT/plugins/kommo/skills/kommo-salesbot-builder/tests/run_all.sh"
 run python3 "$ROOT/plugins/ads-ops/tests/test_meta_job.py"
 run python3 "$ROOT/skills/mise-en-place/scripts/check_secrets.py" --self-test
-run python3 "$ROOT/scripts/eval_cases.py" --check "$ROOT/plugins/ads-ops/evals" "$ROOT/skills/mise-en-place/evals"
+EVAL_DIRS=()
+for cases in "$ROOT"/plugins/*/evals/CASES.md "$ROOT"/skills/*/evals/CASES.md; do
+  [ -f "$cases" ] && EVAL_DIRS+=("$(dirname "$cases")")
+done
+run python3 "$ROOT/scripts/eval_cases.py" --check "${EVAL_DIRS[@]}"
 
 [ $rc -eq 0 ] && echo "TODOS OS TESTES PASSARAM" || echo "HÁ TESTES FALHANDO"
 exit $rc

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
 import re
 import tempfile
@@ -28,8 +29,8 @@ class MetaAdsError(RuntimeError):
 
 
 @dataclass
-class CompanyContext:
-    company: str
+class ProfileContext:
+    profile: str
     access_token: str
     ad_account: str
     page_id: str
@@ -69,51 +70,42 @@ def load_meta_profiles() -> tuple[dict[str, dict[str, Any]], str | None]:
     return profiles, (str(default).lower() if default else None)
 
 
-def load_company_context(
-    company: str | None = None, overrides: dict[str, Any] | None = None
-) -> CompanyContext:
+def load_profile_context(
+    profile: str | None = None, overrides: dict[str, Any] | None = None
+) -> ProfileContext:
+    """Each field comes from the first that has it: the input's context, the config
+    profile, META_<FIELD>_<PROFILE>, META_<FIELD>. The token only from the env vars."""
     profiles, default_profile = load_meta_profiles()
-    key = (company or default_profile or "default").lower().strip()
-    if company and profiles and key not in profiles:
-        raise MetaAdsError(
-            f"Profile '{key}' not found in config. Available: {', '.join(sorted(profiles))}"
-        )
-    defaults = profiles.get(key, {})
+    key = (profile or default_profile or "default").lower().strip()
     extra = overrides or {}
     if "access_token" in extra:
         raise MetaAdsError(
             "Do not put access_token in the input JSON; use META_ACCESS_TOKEN_<PROFILE> or META_ACCESS_TOKEN."
         )
     prefix = re.sub(r"[^A-Z0-9]", "_", key.upper())
+    defaults = profiles.get(key, {})
+    if profile and not defaults and not any(
+        os.getenv(f"META_{field}_{prefix}") for field in ("ACCESS_TOKEN", "AD_ACCOUNT")
+    ):
+        known = ", ".join(sorted(profiles)) or "none in the config"
+        raise MetaAdsError(
+            f"Profile '{key}' not found: not in the config ({known}) and no META_*_{prefix} env vars."
+        )
 
-    token = (
-        os.getenv(f"META_ACCESS_TOKEN_{prefix}")
-        or os.getenv("META_ACCESS_TOKEN")
-    )
-    ad_account = (
-        extra.get("ad_account")
-        or defaults.get("ad_account")
-        or os.getenv(f"META_AD_ACCOUNT_{prefix}")
-        or os.getenv("META_AD_ACCOUNT")
-    )
-    page_id = (
-        extra.get("page_id")
-        or defaults.get("page_id")
-        or os.getenv(f"META_PAGE_ID_{prefix}")
-        or os.getenv("META_PAGE_ID")
-    )
-    ig_user_id = (
-        extra.get("ig_user_id")
-        or defaults.get("ig_user_id")
-        or os.getenv(f"META_IG_USER_ID_{prefix}")
-        or os.getenv("META_IG_USER_ID")
-        or ""
-    )
-    api_version = str(
-        extra.get("api_version")
-        or defaults.get("api_version")
-        or os.getenv("META_API_VERSION", DEFAULT_API_VERSION)
-    )
+    def resolve(field: str, default: str | None = None) -> str | None:
+        return (
+            extra.get(field)
+            or defaults.get(field)
+            or os.getenv(f"META_{field.upper()}_{prefix}")
+            or os.getenv(f"META_{field.upper()}")
+            or default
+        )
+
+    token = os.getenv(f"META_ACCESS_TOKEN_{prefix}") or os.getenv("META_ACCESS_TOKEN")
+    ad_account = resolve("ad_account")
+    page_id = resolve("page_id")
+    ig_user_id = resolve("ig_user_id", "")
+    api_version = str(resolve("api_version", DEFAULT_API_VERSION))
 
     if not token:
         raise MetaAdsError(
@@ -133,8 +125,8 @@ def load_company_context(
     if not str(ad_account).startswith("act_"):
         ad_account = f"act_{ad_account}"
 
-    return CompanyContext(
-        company=key,
+    return ProfileContext(
+        profile=key,
         access_token=str(token),
         ad_account=str(ad_account),
         page_id=str(page_id),
@@ -159,8 +151,14 @@ COPY_LEVELS: dict[str, dict[str, Any]] = {
 COPY_DEFAULTS = {"deep_copy": True, "rename_strategy": "DEEP_RENAME", "status_option": "PAUSED"}
 
 
+def adset_number(name: Any) -> int:
+    """The number an ad set name starts with ("07 - Broad" -> 7), or 0."""
+    match = re.match(r"^\s*(\d+)", str(name or ""))
+    return int(match.group(1)) if match else 0
+
+
 class MetaAdsClient:
-    def __init__(self, context: CompanyContext, dry_run: bool = True) -> None:
+    def __init__(self, context: ProfileContext, dry_run: bool = True) -> None:
         self.context = context
         self.dry_run = dry_run
         self.planned_calls: list[dict[str, Any]] = []
@@ -217,8 +215,7 @@ class MetaAdsClient:
                 time.sleep(attempt)
                 continue
             raise MetaAdsError(f"Meta API error on {path}: {last_error}")
-
-        raise MetaAdsError(f"Request failed on {path}: {last_error}")
+        raise AssertionError("unreachable: the last attempt returns or raises")
 
     def _read(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
         """GET. Reads are safe, so they run for real even in dry-run (audit and
@@ -248,53 +245,41 @@ class MetaAdsClient:
         result = self._read(f"{campaign_id}/adsets", {"fields": "id,name,status", "limit": "500"})
         return result.get("data", [])
 
-    def get_next_adset_number(self, campaign_id: str) -> int:
-        numbers = [
-            int(match.group(1))
-            for adset in self.get_campaign_adsets(campaign_id)
-            if (match := re.match(r"^\s*(\d+)", str(adset.get("name", ""))))
-        ]
-        return max(numbers, default=0) + 1
 
     def upload_image_from_path(self, image_path: str) -> str:
-        if self.dry_run:
-            return f"dry_hash_{Path(image_path).name.replace(' ', '_')}"
-
         path = Path(image_path)
-        if not path.exists():
+        if not path.is_file():
             raise MetaAdsError(f"Image not found: {image_path}")
-
-        filename = path.name
+        mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         with path.open("rb") as handle:
             data = self._write(
                 f"{self.context.ad_account}/adimages",
                 {},
                 id_key="images",
-                files={"filename": (filename, handle, "image/png")},
+                files={"filename": (path.name, handle, mime)},
             )
-        image = data["images"].get(filename, {})
+        if data.get("dry_run"):
+            return f"dry_hash_{path.name.replace(' ', '_')}"
+        image = data["images"].get(path.name, {})
         if "hash" not in image:
-            raise MetaAdsError(f"Image hash missing for {filename}")
+            raise MetaAdsError(f"Image hash missing for {path.name}")
         return str(image["hash"])
 
     def upload_image_from_url(self, image_url: str) -> str:
-        if self.dry_run:
-            return f"dry_hash_{(Path(image_url).name or 'image').replace(' ', '_')}"
-
+        """Downloads the image (a read, so it also runs in dry-run) and uploads it."""
         with requests.get(image_url, timeout=TIMEOUT_SECONDS) as response:
             response.raise_for_status()
-            suffix = Path(image_url).suffix or ".png"
-            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temp:
-                temp.write(response.content)
-                temp_path = Path(temp.name)
+            name = Path(image_url.split("?", 1)[0]).name or "image.png"
+            folder = Path(tempfile.mkdtemp())
+            temp_path = folder / name
+            temp_path.write_bytes(response.content)
         try:
             return self.upload_image_from_path(str(temp_path))
         finally:
             temp_path.unlink(missing_ok=True)
+            folder.rmdir()
 
     def upload_video_from_url(self, video_url: str, title: str) -> str:
-        if self.dry_run:
-            return f"dry_video_{title.replace(' ', '_')}"
         data = self._write(
             f"{self.context.ad_account}/advideos", {"source": video_url, "title": title}
         )
