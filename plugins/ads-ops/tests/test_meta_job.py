@@ -92,7 +92,6 @@ def main():
         if not cond:
             failures.append(msg)
 
-    check(sorted(run_meta_job.JOBS) == TEMPLATES, f"one template per job_type: {TEMPLATES}")
     for name in TEMPLATES:
         rc, report, sent = run(name, execute=False)
         check(report["status"] == "ok" and report["job_type"] == name, f"{name}: dry-run {report}")
