@@ -16,8 +16,6 @@
 #
 # Comportamento:
 #   - Credenciais via kommo_env.sh (perfil do config + token em variável de ambiente).
-#   - GET /pipelines/{id}/statuses (1 req) para listar as etapas.
-#   - Para cada etapa (editável e de sistema), pagina os leads com kommo_stage_leads.
 #
 # Compatível com bash 3 (padrão do macOS). Não usa declare -A.
 
@@ -34,10 +32,8 @@ WITH_LEADS=0
 [[ "${3:-}" == "--with-leads" ]] && WITH_LEADS=1
 [[ "$PIPE" =~ ^[0-9]+$ ]] || { echo "ERRO: pipeline_id deve ser numérico ($PIPE)" >&2; exit 1; }
 
-# ---- Credenciais
 kommo_load_credentials "$PROFILE" || exit $?
 
-# ---- Diretório de saída
 OUTPUT_DIR="${REPORT_DIR:-$PWD/kommo-reports}"
 mkdir -p "$OUTPUT_DIR"
 TS=$(date +%Y%m%d_%H%M%S)
@@ -49,19 +45,16 @@ LEADS_OUT="${BASE}_leads.csv"
 
 API="${DOMAIN}/api/v4"
 
-# ---- Pipeline meta
 echo "→ GET $API/leads/pipelines/$PIPE" >&2
 PIPE_DATA=$(kommo_get "$API/leads/pipelines/$PIPE")
 PIPE_NAME=$(echo "$PIPE_DATA" | jq -r '.name')
 echo "  pipeline: $PIPE_NAME" >&2
 
-# ---- Statuses (sort)
 echo "→ GET $API/leads/pipelines/$PIPE/statuses" >&2
 STATUSES_JSON=$(kommo_get "$API/leads/pipelines/$PIPE/statuses" | jq '._embedded.statuses | sort_by(.sort)')
 STAGE_COUNT=$(echo "$STATUSES_JSON" | jq 'length')
 echo "  $STAGE_COUNT estágios" >&2
 
-# ---- Cada etapa: leads paginados
 ROWS_FILE=$(mktemp)
 PAGES_FILE=$(mktemp)
 SUCCESS=0
@@ -73,7 +66,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Escreve header CSV de leads se --with-leads
 if [[ "$WITH_LEADS" -eq 1 ]]; then
   echo "pipeline_id,pipeline_name,stage_id,stage_name,lead_id,lead_name,created_by,responsible_user_id,created_at,updated_at,source_id" > "$LEADS_OUT"
 fi
@@ -95,15 +87,12 @@ for ((i=0; i<STAGE_COUNT; i++)); do
   done < "$PAGES_FILE"
 
   echo "  ✓ $SNAME (sort=$SSORT, editable=$SEDIT) → $COUNT" >&2
-  # JSON por linha, pego depois
   jq -n --argjson sid "$SID" --arg sname "$SNAME" --argjson sedit "$SEDIT" --argjson ssort "$SSORT" --argjson count "$COUNT" \
     '{"stage_id":$sid, "name":$sname, "sort":$ssort, "editable":$sedit, "leads_count":$count}' >> "$ROWS_FILE"
 done
 
-# ---- Agrega
 ROWS_JSON=$(jq -s '.' "$ROWS_FILE")
 
-# ---- Totais
 TOTAL_ACTIVE=$(echo "$ROWS_JSON" | jq '[.[] | select(.editable==true)] | map(.leads_count) | add // 0')
 TOTAL_TERMINAL=$(echo "$ROWS_JSON" | jq '[.[] | select(.editable!=true)] | map(.leads_count) | add // 0')
 
@@ -111,7 +100,6 @@ TOTAL_TERMINAL=$(echo "$ROWS_JSON" | jq '[.[] | select(.editable!=true)] | map(.
 ROWS_JSON=$(echo "$ROWS_JSON" | jq --argjson total "$TOTAL_ACTIVE" \
   'map(. + {"pct_of_active": (if (.editable==true and $total > 0) then ((.leads_count * 100 / $total) | floor) else null end)})')
 
-# ---- JSON out
 META=$(jq -n \
   --arg profile "$PROFILE" --arg domain "$DOMAIN" \
   --argjson pipe "$PIPE" --arg pname "$PIPE_NAME" \
@@ -122,14 +110,12 @@ META=$(jq -n \
 jq -n --argjson meta "$META" --argjson stages "$ROWS_JSON" \
   '{_meta: $meta, stages: $stages}' > "$JSON_OUT"
 
-# ---- CSV
 {
   echo "pipeline_id,pipeline_name,sort,stage_id,stage_name,editable,leads_count,pct_of_active"
   echo "$ROWS_JSON" | jq -r --arg pipe "$PIPE" --arg pname "$PIPE_NAME" \
     'sort_by(.sort) | .[] | [$pipe, $pname, (.sort|tostring), (.stage_id|tostring), .name, (.editable|tostring), (.leads_count|tostring), (.pct_of_active // "" | tostring)] | @csv'
 } > "$CSV_OUT"
 
-# ---- MD summary
 BIGGEST=$(echo "$ROWS_JSON" | jq -r '[.[] | select(.editable==true)] | sort_by(-.leads_count) | .[0] | "\(.name) (\(.leads_count))"')
 
 {

@@ -102,7 +102,6 @@ https.createServer(opts, function (req, res) {
   var url = decodeURIComponent(req.url.split('?')[0]);
   var qs = req.url.indexOf('?') > -1 ? req.url.slice(req.url.indexOf('?')) : '';
 
-  // API proxy: /k/<kommo v4 path>
   if (url.indexOf('/k/') === 0) {
     if (!originAllowed(req.headers.origin || '')) { res.writeHead(403); return res.end('origin'); }
     var sub = url.slice(3);
@@ -110,7 +109,6 @@ https.createServer(opts, function (req, res) {
     return proxy(req, res, sub + qs);
   }
 
-  // static widget files
   if (url === '/' || url === '') url = '/manifest.json';
   var fp = path.join(ROOT, url);
   if (!fp.startsWith(ROOT)) { res.writeHead(403); return res.end('forbidden'); }

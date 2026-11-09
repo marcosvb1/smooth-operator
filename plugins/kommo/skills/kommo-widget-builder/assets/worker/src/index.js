@@ -8,8 +8,7 @@
 //   - CORS + Origin must be exactly https://<sub>.kommo.com (regex, not substring).
 //   - No shared secret: anything in the widget JS is public. Optional
 //     ALLOWED_ORIGIN var pins the one account that may use this Worker.
-//   - Path whitelist: only `sources` (GET/POST/DELETE) and `leads/pipelines` (GET).
-//     Even if the URL leaks, no access to leads/contacts/etc.
+//   - Path whitelist in allow.json: even if the URL leaks, no access to leads/contacts/etc.
 
 // Route whitelist shared with ../../devserver.js (edit allow.json, not here).
 import ALLOW_RAW from './allow.json';
@@ -49,10 +48,9 @@ export default {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/k/')) return json({ error: 'not found' }, 404);
 
-    // auth
     if (!originAllowed(origin, env)) return json({ error: 'forbidden origin' }, 403);
 
-    const sub = url.pathname.slice(3); // after "/k/"
+    const sub = url.pathname.slice("/k/".length);
     const allowed = ALLOW.some((a) => a.method === request.method && a.re.test(sub));
     if (!allowed) return json({ error: 'endpoint not allowed', path: sub, method: request.method }, 403);
 

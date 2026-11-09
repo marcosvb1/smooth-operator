@@ -45,7 +45,7 @@ def _subst(node, str_subs, num_subs):
         out = node
         for token, val in str_subs.items():
             if out == token:
-                return val  # whole-value replacement preserves non-string targets if val isn't str
+                return val
             if token in out:
                 out = out.replace(token, str(val))
         return out
@@ -59,7 +59,6 @@ def _subst(node, str_subs, num_subs):
 
 def compile_template(template, values):
     slots = {s["name"]: s for s in template.get("slots", [])}
-    # required check
     missing = [n for n, s in slots.items() if s.get("required") and n not in values]
     if missing:
         raise SystemExit(f"ERROR: missing required slot value(s): {missing}")
@@ -73,7 +72,7 @@ def compile_template(template, values):
             continue
         val = values[name]
         sentinel = s.get("sentinel")
-        if sentinel is not None:  # numeric slot
+        if sentinel is not None:
             num_subs[int(sentinel)] = val
         else:
             str_subs[f"<<{name}>>"] = val

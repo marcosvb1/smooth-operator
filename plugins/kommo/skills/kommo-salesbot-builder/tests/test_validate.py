@@ -155,7 +155,6 @@ def main():
         print(f"  ✓ all {n} corpus bots pass with 0 errors")
 
     print("\n== NEGATIVE: mutations must be caught ==")
-    # pick a representative branching bot as mutation base
     base_path = os.path.join(corpus, "cadence-followup.source.json")
     if not os.path.isfile(base_path):
         base_path = os.path.join(corpus, corpus_files(corpus)[0])

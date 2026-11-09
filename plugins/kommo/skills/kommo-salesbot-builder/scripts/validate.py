@@ -92,7 +92,6 @@ def _check_send_message(f, params, where, sid):
 def validate(wrapper, inventory=None):
     f = Findings()
 
-    # ---- wrapper shape ----
     if not isinstance(wrapper, dict):
         f.err("WRAPPER", "Top-level must be an object {type_functionality, model}", "$")
         return f
@@ -131,12 +130,10 @@ def validate(wrapper, inventory=None):
         f.err("POS_TYPE", "model.positions must decode to an array of blocks", "$.model.positions")
         return f
 
-    # ---- size limit ----
     tlen = len(model["text"].encode("utf-8"))
     if tlen > MAX_BOT_BYTES:
         f.err("SIZE", f"model.text is {tlen} bytes (> 64KB limit)", "$.model.text")
 
-    # ---- text steps ----
     text_steps = split_steps(text)
     if "conversation" not in text:
         f.warn("TEXT_CONV", "model.text missing top-level 'conversation' boolean (corpus has it)", "$.model.text")
@@ -174,7 +171,6 @@ def validate(wrapper, inventory=None):
                 if hn == "send_message":
                     _check_send_message(f, h.get("params"), f"text.{sid}.{b}[{i}]", sid)
 
-    # ---- positions blocks ----
     pos_by_id = {}
     pos_steps = set()
     pos_block_uuid = {}  # step -> uuid
@@ -201,17 +197,14 @@ def validate(wrapper, inventory=None):
         if "actions" in blk and not isinstance(blk["actions"], list):
             f.err("POS_ACT", f"positions[{j}].actions must be an array", f"positions[{j}]")
 
-    # ---- CONSISTENCY: the heart ----
-    # 1. every text step appears as a positions block step
     for sid in text_step_ids:
         if sid not in pos_steps:
             f.err("SYNC_TEXT_POS", f"text step {sid} has no matching positions block (step {sid})", f"text.{sid}")
-    # 2. block_uuid agreement where both present
     for sid, bu in text_block_uuid.items():
         pbu = pos_block_uuid.get(sid)
         if pbu and bu and pbu != bu:
             f.err("SYNC_UUID", f"block_uuid mismatch for step {sid}: text={bu} positions={pbu}", f"text.{sid}")
-    # 3. every text BRANCH target resolves. Branch edges live in several handler shapes:
+    # Every text BRANCH target resolves. Branch edges live in several handler shapes:
     #    goto {step,type}; waits.conditions[].action {step,type}; distribution.variants[] {step,type};
     #    conditions.params.result[] gotos (caught by recursion). Bare {step} targets (waits/distribution)
     #    are NOT handler:goto, so a naive goto-only scan misses them (false negative).
@@ -264,7 +257,6 @@ def validate(wrapper, inventory=None):
             if typ is not None and typ not in GOTO_TYPES:
                 f.warn("GOTO_TYPE", f"target type '{typ}' unexpected (step {sid})", f"text.{sid}")
 
-    # 4. positions edges resolve: block-level goto.block AND every action's links[].block
     for j, blk in enumerate(positions):
         if not isinstance(blk, dict):
             continue
@@ -278,12 +270,10 @@ def validate(wrapper, inventory=None):
                     if isinstance(lk, dict) and lk.get("block") is not None and lk["block"] not in pos_by_id:
                         f.err("POS_LINK_DANGLE", f"positions[{j}] (id {blk.get('id')}) action links.block {lk['block']} has no such block", f"positions[{j}]")
 
-    # 4b. exactly one start block (INV-ONE-START)
     n_start = sum(1 for b in positions if isinstance(b, dict) and b.get("type") == "start")
     if n_start != 1:
         f.err("ONE_START", f"expected exactly 1 start block in positions, found {n_start}")
 
-    # 4c. orphan positions block: a non-start/static/finish block whose step has no text entry
     for j, blk in enumerate(positions):
         if not isinstance(blk, dict):
             continue
@@ -291,7 +281,6 @@ def validate(wrapper, inventory=None):
         if st is not None and str(st) not in text_step_ids and blk.get("type") not in ("start", "static", "finish"):
             f.warn("POS_ORPHAN", f"positions[{j}] (id {blk.get('id')}, type {blk.get('type')}) step {st} has no text entry", f"positions[{j}]")
 
-    # 4d. block_uuid uniqueness across text steps
     seen_uuid = {}
     for sid, bu in text_block_uuid.items():
         if bu in seen_uuid:
@@ -299,7 +288,6 @@ def validate(wrapper, inventory=None):
         else:
             seen_uuid[bu] = sid
 
-    # 4e. handler-shape structural checks (run without inventory)
     for h in iter_handlers(text):
         hn = h.get("handler")
         p = h.get("params", {})
@@ -320,7 +308,6 @@ def validate(wrapper, inventory=None):
             if p["params"].get("pipeline_id") is None:
                 f.err("PIPELINE_REQUIRED", "change_status requires a pipeline_id (absent) — status alone is ambiguous")
 
-    # 5. button limits
     for h in iter_handlers(text):
         p = h.get("params", {})
         if isinstance(p, dict):
@@ -333,7 +320,6 @@ def validate(wrapper, inventory=None):
                     if isinstance(txt, str) and len(txt) > MAX_BUTTON_LEN:
                         f.warn("BUTTON_LEN", f"button text >{MAX_BUTTON_LEN} chars may truncate on Messenger: '{txt[:30]}...'")
 
-    # ---- INVENTORY pass ----
     if inventory is not None:
         _inventory_pass(f, text, positions, inventory)
 
@@ -360,7 +346,6 @@ def _inventory_pass(f, text, positions, inv):
         p = h.get("params", {})
         if not isinstance(p, dict):
             continue
-        # change_status -> pipeline + status (status must belong to the pipeline)
         if hn == "action" and p.get("name") == "change_status":
             ap = p.get("params", {})
             sid_ = ap.get("value")
@@ -386,7 +371,6 @@ def _inventory_pass(f, text, positions, inv):
                     if m:
                         cf = all_cf.get(int(m.group(1)))
             val = ap.get("value")
-            # bare digit-string value targeting a select-typed CF must be a known enum id
             if isinstance(val, str) and val.isdigit() and cf and cf.get("type") in select_types:
                 if int(val) not in {e["id"] for e in cf.get("enums", [])}:
                     f.err("INV_ENUM", f"set_custom_fields value {val} is not an enum id of CF {cf.get('id')} ({cf.get('name')})")
@@ -403,7 +387,6 @@ def _inventory_pass(f, text, positions, inv):
             ru = (tr.get("settings") or {}).get("responsible_user")
             if ru not in ("current", None) and str(ru).isdigit() and int(ru) not in user_ids:
                 f.err("INV_USER", f"trigger responsible_user {ru} not a user in this account")
-        # chat_sources
         srcs = p.get("chat_sources")
         if isinstance(srcs, list):
             for s in srcs:

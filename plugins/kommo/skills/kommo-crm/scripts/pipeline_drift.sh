@@ -33,15 +33,12 @@ if [[ ! -f "$MEM_FILE" ]]; then
   exit 2
 fi
 
-# ---- Credenciais
 kommo_load_credentials "$PROFILE" || exit 2
 
-# ---- 1. Estado da API
 if ! API_DATA=$(kommo_get "${DOMAIN}/api/v4/leads/pipelines/$PIPE"); then
   exit 2
 fi
 API_NAME=$(echo "$API_DATA" | jq -r '.name')
-# Stages com `id|name|sort|editable`
 API_TMP=$(mktemp)
 MEM_TMP=$(mktemp)
 trap 'rm -f "$API_TMP" "$MEM_TMP"' EXIT
@@ -51,18 +48,15 @@ if ! kommo_get "${DOMAIN}/api/v4/leads/pipelines/$PIPE/statuses" \
 fi
 API_COUNT=$(grep -c . "$API_TMP" || true)
 
-# ---- 2. Estado do baseline: extrair a última tabela `sort | id | nome`
 MEM_NAME=$(awk -v want=name -f "$SCRIPT_DIR/extract_pipeline_baseline.awk" "$MEM_FILE")
 awk -f "$SCRIPT_DIR/extract_pipeline_baseline.awk" "$MEM_FILE" > "$MEM_TMP"
 MEM_COUNT=$(grep -c "|" "$MEM_TMP" || true)
 
-# ---- 3. Drift
 DRIFT=0
 REPORT="## Kommo drift check — ${PROFILE} / pipeline ${PIPE}\n\n"
 REPORT+="**API:** \`${API_NAME}\` — ${API_COUNT} estágios  \n"
 REPORT+="**Baseline:** \`${MEM_NAME:-?}\` — ${MEM_COUNT} estágios (\`${MEM_FILE}\`)  \n\n"
 
-# 3.1 Nome do pipeline
 if [[ -z "${MEM_NAME:-}" ]]; then
   REPORT+="### ⚠️ Nome do pipeline não parseado do baseline (regex pode estar defasado)\n\n"
   DRIFT=1
@@ -72,8 +66,6 @@ elif [[ "${API_NAME}" != "${MEM_NAME}" ]]; then
   DRIFT=1
 fi
 
-# 3.2 Adições/renomeações (itera API stages)
-# Compara nomes sem espaço nas pontas e sem diferença de caixa (tr: bash 3).
 normalize_name() {
   echo "$1" | sed -E 's/^[[:space:]]+|[[:space:]]+$//' | tr '[:upper:]' '[:lower:]'
 }
@@ -97,7 +89,6 @@ while IFS='|' read -r sid sname ssort sedit; do
   fi
 done < "$API_TMP"
 
-# 3.3 Remoções (itera as etapas do baseline)
 REMOVED=""
 while IFS='|' read -r sid sname ssort; do
   [[ -z "$sid" ]] && continue

@@ -9,7 +9,6 @@
 #
 # Comportamento:
 #   - Credenciais via kommo_env.sh (perfil do config + token em variável de ambiente).
-#   - Pagina /contacts com limit=250 (kommo_paginate respeita o rate limit).
 #   - Saída em JSONL, 1 contato por linha: id, name, created_at, updated_at, email,
 #     phone e `custom_fields` ({"<nome do campo>": "<valor>"}; campos multivalor
 #     viram lista). Filtre por custom field depois, com jq: a API ignora
