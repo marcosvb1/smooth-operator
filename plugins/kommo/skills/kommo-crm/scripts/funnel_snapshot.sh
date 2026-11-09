@@ -20,16 +20,15 @@
 #   - Para cada etapa (editável e de sistema), pagina
 #     /leads?filter[statuses][0][pipeline_id]=...&filter[statuses][0][status_id]=...
 #     filter[status_id]=ID direto é IGNORADO em silêncio; só a sintaxe aninhada funciona.
-#   - Rate limit 7 req/s: sleep 0.18 entre páginas.
-#   - 204 ou `_embedded.leads` vazio encerra o loop.
+#   - Paginação e rate limit via kommo_paginate.
 #
 # Compatível com bash 3 (padrão do macOS). Não usa declare -A.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=kommo_env.sh
-source "$SCRIPT_DIR/kommo_env.sh"
+# shellcheck source=../../../scripts/kommo_env.sh
+source "$SCRIPT_DIR/../../../scripts/kommo_env.sh"
 
 USAGE="Uso: $0 <perfil> <pipeline_id> [--with-leads]"
 PROFILE="${1:?$USAGE}"
@@ -51,7 +50,6 @@ CSV_OUT="${BASE}.csv"
 MD_OUT="${BASE}.md"
 LEADS_OUT="${BASE}_leads.csv"
 
-SLEEP=0.18
 API="${DOMAIN}/api/v4"
 
 # ---- Pipeline meta
@@ -68,10 +66,10 @@ echo "  $STAGE_COUNT estágios" >&2
 
 # ---- Each status: paginate /leads com syntax correta filter[statuses][0][...]
 ROWS_FILE=$(mktemp)
-: > "$ROWS_FILE"
+PAGES_FILE=$(mktemp)
 SUCCESS=0
 cleanup() {
-  rm -f "$ROWS_FILE"
+  rm -f "$ROWS_FILE" "$PAGES_FILE"
   if [[ "$SUCCESS" -eq 0 ]]; then
     rm -f "$JSON_OUT" "$CSV_OUT" "$MD_OUT" "$LEADS_OUT"
   fi
@@ -89,30 +87,15 @@ for ((i=0; i<STAGE_COUNT; i++)); do
   SEDIT=$(echo "$STATUSES_JSON" | jq -r ".[$i].is_editable")
   SSORT=$(echo "$STATUSES_JSON" | jq -r ".[$i].sort")
 
-  # Pagina até 204 / null / array vazio
-  PAGE=1
+  kommo_paginate "$API/leads?filter[statuses][0][pipeline_id]=${PIPE}&filter[statuses][0][status_id]=${SID}&with=source_id&limit=250" leads > "$PAGES_FILE"
   COUNT=0
-  while true; do
-    URL="$API/leads?filter[statuses][0][pipeline_id]=${PIPE}&filter[statuses][0][status_id]=${SID}&with=source_id&limit=250&page=${PAGE}"
-    RESP=$(kommo_get "$URL")
-    PAGE_LEADS=$(kommo_collection_json "$RESP" leads)
-    N=$(echo "$PAGE_LEADS" | jq 'length')
-    # Vazio → para
-    if [[ -z "$RESP" || "$RESP" == "{}" || "$N" -eq 0 ]]; then
-      break
-    fi
-    COUNT=$((COUNT + N))
-
+  while IFS= read -r PAGE_LEADS; do
+    COUNT=$((COUNT + $(echo "$PAGE_LEADS" | jq 'length')))
     if [[ "$WITH_LEADS" -eq 1 && "$SEDIT" == "true" ]]; then
       echo "$PAGE_LEADS" | jq -r --arg pipe "$PIPE" --arg pname "$PIPE_NAME" --arg sid "$SID" --arg sname "$SNAME" \
         '.[] | [$pipe, $pname, $sid, $sname, .id, (.name | gsub("\n";" ") | gsub(",";"")), (.created_by | tostring), (.responsible_user_id | tostring), (.created_at | tostring), (.updated_at | tostring), (.source_id | tostring)] | @csv' >> "$LEADS_OUT"
     fi
-
-    NEXT=$(echo "$RESP" | jq -r '._links.next.href // empty')
-    [[ -z "$NEXT" ]] && break
-    PAGE=$((PAGE + 1))
-    sleep $SLEEP
-  done
+  done < "$PAGES_FILE"
 
   echo "  ✓ $SNAME (sort=$SSORT, editable=$SEDIT) → $COUNT" >&2
   # JSON por linha, pego depois
@@ -181,9 +164,7 @@ BIGGEST=$(echo "$ROWS_JSON" | jq -r '[.[] | select(.editable==true)] | sort_by(-
   fi
 } > "$MD_OUT"
 
-# ---- Cleanup
 SUCCESS=1
-rm -f "$ROWS_FILE"
 
 echo "" >&2
 echo "→ Salvo:" >&2

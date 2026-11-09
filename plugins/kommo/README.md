@@ -50,7 +50,7 @@ Os scripts precisam de `bash`, `curl` e `jq` (kommo-crm) e de Python 3 sem depen
 ## Testes
 
 ```bash
-bash plugins/kommo/skills/kommo-crm/scripts/test_scripts.sh          # sem rede nem credenciais
+bash plugins/kommo/tests/test_scripts.sh                            # sem rede nem credenciais
 bash plugins/kommo/skills/kommo-salesbot-builder/tests/run_all.sh    # provas offline do validador
 ```
 

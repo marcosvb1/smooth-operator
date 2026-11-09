@@ -454,7 +454,7 @@ def _inventory_pass(f, text, positions, inv):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("bot", help="path to a salesbot export json")
-    ap.add_argument("--inventory", help="account inventory json from resolve_ids.py (enables ID checks)")
+    ap.add_argument("--inventory", help="account inventory json from resolve_ids.sh (enables ID checks)")
     ap.add_argument("--json", action="store_true", help="emit findings as JSON")
     ap.add_argument("--strict", action="store_true", help="exit nonzero on WARN too")
     args = ap.parse_args()

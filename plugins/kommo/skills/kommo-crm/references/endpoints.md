@@ -1,6 +1,6 @@
 # Kommo API v4 — Receitas curl
 
-Endpoints da API v4. `DOMAIN` e `TOKEN` vêm do perfil resolvido por `scripts/kommo_env.sh` (domínio no config `kommo.local.json`, token em `KOMMO_ACCESS_TOKEN_<PERFIL>`). Nos exemplos, `TOKEN` é sempre a variável, nunca o valor.
+Endpoints da API v4. `DOMAIN` e `TOKEN` vêm do perfil resolvido por `${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh` (domínio no config `kommo.local.json`, token em `KOMMO_ACCESS_TOKEN_<PERFIL>`). Nos exemplos, `TOKEN` é sempre a variável, nunca o valor.
 
 Headers padrão em toda chamada:
 

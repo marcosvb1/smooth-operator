@@ -73,7 +73,7 @@ Pra "remover" Incoming leads: setting `is_unsorted_on: false` no pipeline (UI). 
 
 `PATCH /pipelines/{id}/statuses` (sem `{status_id}` final) retorna **HTTP 405**. Sempre 1 PATCH por status.
 
-Rate limit: 7 req/s. Usar `sleep 0.18` entre PATCHs. 429 → sleep 1s + retry.
+Rate limit: 7 req/s. Usar `sleep "$KOMMO_RATE_SLEEP"` (0,18 s) entre PATCHs. 429 → sleep 1s + retry.
 
 ## Sort — reordenamento agressivo
 

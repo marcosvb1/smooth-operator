@@ -82,7 +82,7 @@ Mesma convenção do plugin (veja a skill `kommo-crm`): perfil no config `kommo.
 `KOMMO_ACCESS_TOKEN`. O perfil-alvo é **explícito**: se o usuário não disse para qual conta, pergunte.
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kommo-salesbot-builder/scripts/resolve_ids.py" <perfil> \
+"${CLAUDE_PLUGIN_ROOT}/skills/kommo-salesbot-builder/scripts/resolve_ids.sh" <perfil> \
   --out /tmp/inv.<perfil>.json --scan-bots <pasta-de-exports-da-conta-alvo>
 ```
 
@@ -102,7 +102,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/kommo-salesbot-builder/scripts/resolve_ids
 
 1. Receber o export (modo adaptar) ou a escolha de template + copy (modo compilar), e o
    perfil-alvo. Se faltar algum, peça: o motor não inventa fluxo nem conta.
-2. Resolver IDs ao vivo → inventário (`resolve_ids.py`).
+2. Resolver IDs ao vivo → inventário (`resolve_ids.sh`).
 3. Modo adaptar: `salesbot_model.parse_to_ir` no export e remapear os IDs do IR para os
    resolvidos + `chat_source` **confirmado**; depois `salesbot_model.ir_to_export`.
    Modo compilar: preencher os slots do template (`templates/README.md`) com a copy e os IDs
@@ -147,7 +147,7 @@ importado, age sobre leads reais. Por isso:
 | `references/format.md` | Formato de export completo, handlers, invariantes e divergências da doc |
 | `references/ir.md` | Schema do IR (forma editável do export) e a fase 2 adiada |
 | `references/api-and-runtime.md` | API de bots, `chat_source`, templates de WhatsApp, `widget_request` |
-| `scripts/resolve_ids.py` | Inventário de IDs ao vivo por perfil (+ scan de `chat_sources` em exports) |
+| `scripts/resolve_ids.sh` | Inventário de IDs ao vivo por perfil (+ scan de `chat_sources` em exports) |
 | `scripts/validate.py` | Valida um export contra os invariantes + inventário |
 | `scripts/roundtrip.py` | export → IR → export com diff semântico |
 | `scripts/roundtrip_templates.py` | Prova que cada template regenera o bot-fonte |

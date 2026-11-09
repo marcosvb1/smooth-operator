@@ -222,11 +222,11 @@ Campos de sistema (NÃO checados contra o registro de CF): `{{lead.source_id}}`,
 | Kind | Onde | Resolução |
 |---|---|---|
 | chat_source | `send_message.chat_sources[].id` | **NÃO via API** (`/sources`=204). Lift de bot existente + confirmar |
-| pipeline_id | `change_status.params.pipeline_id` | `resolve_ids.py` (leads/pipelines) |
+| pipeline_id | `change_status.params.pipeline_id` | `resolve_ids.sh` (leads/pipelines) |
 | status_id | `change_status.params.value` | idem (statuses embutidos) |
-| custom field | `set_custom_fields.custom_fields_id` / `{{lead.cf.ID}}` | `resolve_ids.py` (leads/contacts custom_fields) |
+| custom field | `set_custom_fields.custom_fields_id` / `{{lead.cf.ID}}` | `resolve_ids.sh` (leads/contacts custom_fields) |
 | enum | `{{lead.cf.ID.ENUM}}` / value de select | idem (enums do cf) |
-| user | `change_responsible_user.value`, `subscribe`, `send_internal.user_id` | `resolve_ids.py` (users) |
+| user | `change_responsible_user.value`, `subscribe`, `send_internal.user_id` | `resolve_ids.sh` (users) |
 | bot | `start.params.bot` | exportar/listar bots na conta |
 
 Os 24 exemplos são de **contas estrangeiras** — todos os ids acima são inválidos fora delas.

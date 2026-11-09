@@ -18,8 +18,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=kommo_env.sh
-source "$SCRIPT_DIR/kommo_env.sh"
+# shellcheck source=../../../scripts/kommo_env.sh
+source "$SCRIPT_DIR/../../../scripts/kommo_env.sh"
 
 USAGE="Uso: $0 <perfil> <pipeline_id> [baseline.md]"
 PROFILE="${1:-}"
@@ -51,18 +51,7 @@ fi
 API_COUNT=$(grep -c . "$API_TMP" || true)
 
 # ---- 2. Estado do baseline: extrair a última tabela `sort | id | nome`
-# Nome do pipeline: pega primeiro texto entre backticks após "Pipeline:" (aceita "hoje nomeado `X` (era `Y`)")
-MEM_NAME=$(awk '
-  /^\*\*Pipeline:\*\*/ {
-    # Pega o texto entre o primeiro par craseado
-    line=$0
-    while (match(line, /`[^`]+`/)) {
-      print substr(line, RSTART+1, RLENGTH-2)
-      exit
-    }
-  }
-' "$MEM_FILE")
-
+MEM_NAME=$(awk -v want=name -f "$SCRIPT_DIR/extract_pipeline_baseline.awk" "$MEM_FILE")
 MEM_TMP=$(mktemp)
 awk -f "$SCRIPT_DIR/extract_pipeline_baseline.awk" "$MEM_FILE" > "$MEM_TMP"
 MEM_COUNT=$(grep -c "|" "$MEM_TMP" || true)

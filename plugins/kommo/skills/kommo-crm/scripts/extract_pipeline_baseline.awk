@@ -1,5 +1,13 @@
-# Emit the last Markdown table with columns `sort | id | nome` as id|name|sort.
-# Later live snapshots supersede historical tables earlier in the same document.
+# Reads a pipeline baseline (references/baseline.template.md).
+# Default: emit the last Markdown table with columns `sort | id | nome` as id|name|sort;
+# later live snapshots supersede historical tables earlier in the same document.
+# -v want=name: emit the pipeline name, the first `backticked` text on the **Pipeline:** line.
+want == "name" && /^\*\*Pipeline:\*\*/ {
+  if (match($0, /`[^`]+`/)) print substr($0, RSTART+1, RLENGTH-2)
+  exit
+}
+want == "name" { next }
+
 /^\| sort \| id \| nome( \||$)/ {
   in_table=1
   count=0

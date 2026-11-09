@@ -48,7 +48,7 @@ perfil, endpoint e IDs.
 ## Caminhos que a API rejeita (não tentar, não pedir OK)
 
 - `PATCH /api/v4/leads/pipelines/{id}/statuses` em lote (sem `{status_id}`) → **405**. Um PATCH
-  por etapa, com `sleep 0.18`.
+  por etapa, com `sleep "$KOMMO_RATE_SLEEP"`.
 - `DELETE /api/v4/leads` e `DELETE /api/v4/contacts` → **405**. Não há delete de lead pela API.
   Para teste reversível, usar `unsorted/forms` e depois
   `DELETE /api/v4/leads/unsorted/{uid}/decline?user_id=<ID>` (apaga lead e contato provisórios).

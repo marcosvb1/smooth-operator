@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-# Testes locais dos scripts: sem credenciais reais e sem chamadas externas
-# (as falhas de transporte usam http://127.0.0.1:9, que recusa conexão).
+# Testes locais dos scripts do plugin kommo: sem credenciais reais e sem chamadas
+# externas (falhas de transporte usam http://127.0.0.1:9, que recusa conexão; o resto
+# fala com tests/fake_kommo.py).
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_SH="$SCRIPT_DIR/kommo_env.sh"
+TESTS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN="$(dirname "$TESTS")"
+ENV_SH="$PLUGIN/scripts/kommo_env.sh"
+SCRIPT_DIR="$PLUGIN/skills/kommo-crm/scripts"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
@@ -70,6 +73,26 @@ KOMMO_ACCESS_TOKEN_TESTE="dummy" \
 bash -c 'source "$1"; kommo_load_credentials teste; ! kommo_get "$DOMAIN/api/v4/account" >/dev/null 2>&1' _ "$ENV_SH"
 
 bash -c 'source "$1"; [[ "$(kommo_collection_count "" contacts)" == "0" ]]; [[ "$(kommo_collection_json "" leads)" == "[]" ]]' _ "$ENV_SH"
+KOMMO_DOMAIN_TESTE="http://127.0.0.1:9" \
+KOMMO_ACCESS_TOKEN_TESTE="dummy" \
+bash -c 'source "$1"; kommo_load_credentials teste; ! kommo_paginate "$DOMAIN/api/v4/contacts" contacts >/dev/null 2>&1' _ "$ENV_SH"
+
+# 7b. kommo_paginate segue _links.next, para na página vazia (204) e devolve uma linha por página.
+PORT_FILE="$WORK/port"
+python3 "$TESTS/fake_kommo.py" "$PORT_FILE" &
+SERVER_PID=$!
+trap 'kill "$SERVER_PID" 2>/dev/null; rm -rf "$WORK"' EXIT
+for _ in $(seq 50); do [[ -s "$PORT_FILE" ]] && break; sleep 0.1; done
+PAGES=$(KOMMO_DOMAIN_TESTE="http://127.0.0.1:$(cat "$PORT_FILE")" KOMMO_ACCESS_TOKEN_TESTE="dummy" \
+  bash -c 'source "$1"; kommo_load_credentials teste; kommo_paginate "$DOMAIN/api/v4/contacts?limit=250" contacts' _ "$ENV_SH")
+[[ "$PAGES" == $'[{"id":1}]\n[{"id":2}]' ]]
+
+# 7c. O inventário do salesbot sai do mesmo cliente, com os campos que o validate.py lê.
+INV=$(KOMMO_DOMAIN_TESTE="http://127.0.0.1:$(cat "$PORT_FILE")" KOMMO_ACCESS_TOKEN_TESTE="dummy" \
+  "$PLUGIN/skills/kommo-salesbot-builder/scripts/resolve_ids.sh" teste 2>/dev/null)
+jq -e '.account_id == 1 and .pipelines[0].statuses[1].id == 142 and .users[0].id == 5
+  and .lead_custom_fields[0].enums[0].id == 70 and .contact_custom_fields[0].enums == []
+  and .chat_sources.resolvable_via_api == false' <<<"$INV" >/dev/null
 
 # 8. Baseline com tabela histórica e tabela atual: a última tabela vence.
 BASELINE="$WORK/kommo-baselines/teste_1000.md"
@@ -101,6 +124,7 @@ OUT="$WORK/baseline.txt"
 awk -f "$SCRIPT_DIR/extract_pipeline_baseline.awk" "$BASELINE" > "$OUT"
 [[ "$(wc -l < "$OUT" | tr -d ' ')" == "4" ]]
 grep -q '^101|Em Qualificação|20$' "$OUT"
+[[ "$(awk -v want=name -f "$SCRIPT_DIR/extract_pipeline_baseline.awk" "$BASELINE")" == "Funil de Teste" ]]
 ! grep -q '^102|tentativa de contato|30$' "$OUT"
 
 # O template do baseline também precisa ser legível pelo extrator.

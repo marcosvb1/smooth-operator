@@ -28,6 +28,6 @@ Configure os perfis de conta usados pelas skills `kommo-crm`, `kommo-salesbot-bu
 7. **Nunca** grave tokens nesse arquivo. No fim, explique:
    - onde gerar o token: no Kommo, Configurações → Integrações → integração privada → aba "Chaves e escopos" → token de longa duração (se a aba não aparecer, preencher qualquer URL de redirecionamento e salvar);
    - qual variável de ambiente definir no shell ou no gerenciador de segredos, com o nome do perfil em maiúsculas e `-` trocado por `_`: `KOMMO_ACCESS_TOKEN_<PERFIL>` (ou `KOMMO_ACCESS_TOKEN` para todas as contas);
-   - como testar: `source "${CLAUDE_PLUGIN_ROOT}/skills/kommo-crm/scripts/kommo_env.sh" && kommo_load_credentials <perfil> && kommo_get "$DOMAIN/api/v4/account" | jq .id` deve devolver o ID numérico da conta.
+   - como testar: `source "${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh" && kommo_load_credentials <perfil> && kommo_get "$DOMAIN/api/v4/account" | jq .id` deve devolver o ID numérico da conta.
 
 Se o usuário colar um token na conversa, não grave nem repita, e avise que ele deve ir para uma variável de ambiente.

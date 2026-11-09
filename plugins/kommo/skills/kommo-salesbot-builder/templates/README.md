@@ -18,7 +18,7 @@ Estrutura de um template:
 
 - **copy** (`text`): texto livre (mensagens, nome do bot). Vem do chamador, sempre.
 - **id** (`chat_source`, `status`, `pipeline`, `user`, `custom_field`, `enum`): resolvido na
-  conta-alvo com `resolve_ids.py`. Nunca reusar ID de outra conta.
+  conta-alvo com `resolve_ids.sh`. Nunca reusar ID de outra conta.
 - **delay**: segundos.
 - **raw**: valor inserido como está (ex.: placeholder `{{lead.cf.<FIELD_ID>}}`).
 

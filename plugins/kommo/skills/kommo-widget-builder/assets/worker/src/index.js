@@ -14,6 +14,7 @@
 // Route whitelist shared with ../../devserver.js (edit allow.json, not here).
 import ALLOW_RAW from './allow.json';
 const ALLOW = ALLOW_RAW.map((a) => ({ method: a.method, re: new RegExp(a.path) }));
+const ALLOW_METHODS = [...new Set(ALLOW_RAW.map((a) => a.method)), 'OPTIONS'].join(', ');
 
 const KOMMO_ORIGIN = /^https:\/\/[a-z0-9-]+\.kommo\.com$/;
 
@@ -26,7 +27,7 @@ function corsHeaders(origin, env) {
   const allow = originAllowed(origin, env) ? origin : `https://${env.KOMMO_DOMAIN}`;
   return {
     'Access-Control-Allow-Origin': allow,
-    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': ALLOW_METHODS,
     'Access-Control-Allow-Headers': 'Content-Type, X-Requested-With',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin',
@@ -63,7 +64,7 @@ export default {
         'Content-Type': 'application/json',
       },
     };
-    if (request.method === 'POST' || request.method === 'DELETE') {
+    if (request.method !== 'GET') {
       init.body = await request.text();
     }
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Resolvedor de credenciais compartilhado pelos scripts do Kommo.
+# Credenciais e HTTP do plugin kommo: usado pelos scripts das skills, pelo
+# /kommo:setup e (via DOMAIN/TOKEN exportados) pelo devserver do widget.
 #
 # Config (sem tokens), procurado nesta ordem:
 #   1. $KOMMO_CONFIG
@@ -164,4 +165,26 @@ kommo_collection_json() {
 
 kommo_collection_count() {
   kommo_collection_json "${1:-}" "${2:?nome da coleção obrigatório}" | jq 'length'
+}
+
+# Limite da API: 7 req/s. Quem faz laço de requisições espera isto entre elas.
+KOMMO_RATE_SLEEP=0.18
+
+# Pagina uma coleção: imprime cada página como um array JSON (uma linha por página).
+# Para no corpo vazio (HTTP 204), na página sem itens ou quando não há _links.next.
+# Uso: kommo_paginate "$DOMAIN/api/v4/contacts?limit=250" contacts
+kommo_paginate() {
+  local url="${1:?URL obrigatória}"
+  local collection="${2:?nome da coleção obrigatório}"
+  local sep="?" page=1 resp items
+  [[ "$url" == *\?* ]] && sep="&"
+  while true; do
+    resp=$(kommo_get "${url}${sep}page=${page}") || return 1
+    items=$(kommo_collection_json "$resp" "$collection")
+    [[ "$items" == "[]" ]] && return 0
+    printf '%s\n' "$items"
+    [[ -n "$(printf '%s' "$resp" | jq -r '._links.next.href // empty')" ]] || return 0
+    page=$((page + 1))
+    sleep "$KOMMO_RATE_SLEEP"
+  done
 }

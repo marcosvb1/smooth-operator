@@ -159,8 +159,9 @@ Mesma convenção do plugin (veja a skill `kommo-crm`): perfil no config `kommo.
 
 O **token da integração** (long-lived, escopos `crm` e outros) é gerado na aba "Chaves e escopos"
 da integração privada. **Nunca** coloque no `script.js` (o JS do widget é público): no Worker ele
-vira secret (`wrangler secret put KOMMO_TOKEN`), no `assets/devserver.js` vem de variável de
-ambiente. Vale um perfil próprio para a integração-widget (ex.: `cliente-a-widget`), separado do
+vira secret (`wrangler secret put KOMMO_TOKEN`); o `assets/devserver.js` lê `DOMAIN` e `TOKEN`
+do ambiente que o resolvedor do plugin exporta:
+`source "${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh" && kommo_load_credentials <perfil> && node devserver.js`. Vale um perfil próprio para a integração-widget (ex.: `cliente-a-widget`), separado do
 token de operação.
 
 ## Gates

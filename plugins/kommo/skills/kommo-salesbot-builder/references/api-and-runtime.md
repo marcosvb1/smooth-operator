@@ -30,7 +30,7 @@ O `chat_sources[].id` é o id de canal de mensageria (amojo) e **não é resolv�
 Como obter o id certo:
 
 1. Exportar pela UI um bot que já envia mensagem por aquele canal na conta-alvo (ou criar um bot
-   de 1 passo e exportar) e ler o id; `resolve_ids.py --scan-bots <pasta>` lista os ids vistos.
+   de 1 passo e exportar) e ler o id; `resolve_ids.sh --scan-bots <pasta>` lista os ids vistos.
 2. Para saber de qual número/canal é um `source_id` de lead: `GET /api/v4/leads?limit=250&with=source_id`
    e tabular `source_id` × `pipeline_id`. O canal não tem nome pela API, mas as pipes em que os
    leads dele caem mostram de quem ele é. `filter[source_id]` é ignorado; `source_id` só vem com
