@@ -79,6 +79,7 @@ Per project: `claude plugin install <plugin>@smooth-operator --scope project`.
 - `.claude-plugin/marketplace.json`: the marketplace catalog. Every plugin, mod or skill bundle is listed here.
 - `plugins/`: plugins and mods, one folder per plugin (see [plugins/README.md](plugins/README.md)).
 - `skills/`: standalone skills, one folder per skill (see [skills/README.md](skills/README.md)).
+- `scripts/`: repo tooling. `scripts/test.sh` runs every offline test (CI runs the same); `scripts/eval_cases.py` rebuilds an eval suite's `CASES.md`.
 
 ## License
 

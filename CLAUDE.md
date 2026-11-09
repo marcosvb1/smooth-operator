@@ -42,10 +42,12 @@ Mods criados numa sessão na nuvem ficam no container e somem quando a sessão a
 
 ## Antes de commitar
 
+- Rode `bash scripts/test.sh` (todos os testes offline; o CI roda o mesmo). Teste novo entra nesse arquivo.
+- Mexeu num caso de eval? Rode `python3 scripts/eval_cases.py <pasta evals>` para regenerar o `CASES.md`.
 - Plugins: rode o agent `plugin-dev:plugin-validator`.
 - Skills: rode o agent `plugin-dev:skill-reviewer`.
 - Mods: rode `claude plugin validate`, `tsc` e `claude plugin test`.
 
 ## Distribuição
 
-Liste cada plugin ou mod no `.claude-plugin/marketplace.json` da raiz. A instalação é `/plugin marketplace add marcosvb1/smooth-operator` uma vez e depois `/plugin install <nome>@smooth-operator`. Skills avulsas ficam em `skills/` e entram no marketplace por uma entrada com `"source": "./skills"`, `"strict": false` e a lista `"skills"` com caminhos relativos a `skills/` (veja `skills/README.md`; nunca `"source": "./"`, que dá erro de `plugin.json` aninhado).
+Liste cada plugin ou mod no `.claude-plugin/marketplace.json` da raiz. A versão de um plugin com `plugin.json` mora só nele; não repita `version` na entrada do marketplace. A instalação é `/plugin marketplace add marcosvb1/smooth-operator` uma vez e depois `/plugin install <nome>@smooth-operator`. Skills avulsas ficam em `skills/` e entram no marketplace por uma entrada com `"source": "./skills"`, `"strict": false` e a lista `"skills"` com caminhos relativos a `skills/` (veja `skills/README.md`; nunca `"source": "./"`, que dá erro de `plugin.json` aninhado).
