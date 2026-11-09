@@ -38,7 +38,7 @@ KNOWN_HANDLERS = {
     "stop", "preset", "find", "filter", "meta", "validations", "send_external_message",
     "widget_request", "exits",
 }
-GOTO_TYPES = {"question", "answer", "finish"}
+GOTO_TYPES = set(LANES)
 
 
 class Findings:
@@ -354,7 +354,6 @@ def _inventory_pass(f, text, positions, inv):
     # Only an explicit human-curated 'confirmed' list counts. The 'from_existing_bots'
     # scan is reference-only (may contain ids from FOREIGN accounts) and never confirms.
     confirmed_cs = set(cs.get("confirmed", []))
-    bots = set(inv.get("bots", []) or [])  # optional: bot-chaining ids (resolve_ids may not populate)
 
     for h in iter_handlers(text):
         hn = h.get("handler")
@@ -404,10 +403,6 @@ def _inventory_pass(f, text, positions, inv):
             ru = (tr.get("settings") or {}).get("responsible_user")
             if ru not in ("current", None) and str(ru).isdigit() and int(ru) not in user_ids:
                 f.err("INV_USER", f"trigger responsible_user {ru} not a user in this account")
-        if hn == "start":
-            bid = p.get("bot")
-            if isinstance(bid, int) and bots and bid not in bots:
-                f.err("INV_BOT", f"start.bot {bid} not a bot in this account")
         # chat_sources
         srcs = p.get("chat_sources")
         if isinstance(srcs, list):

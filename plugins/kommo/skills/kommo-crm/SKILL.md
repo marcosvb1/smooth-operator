@@ -70,12 +70,16 @@ source "${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh"
 kommo_load_credentials <perfil>     # exporta DOMAIN e TOKEN sem imprimir o token
 kommo_get "$DOMAIN/api/v4/account"  # GET com retry em 429
 kommo_paginate "$DOMAIN/api/v4/contacts?limit=250" contacts   # uma página (array JSON) por linha
+kommo_stage_leads "$PIPE" "$STATUS_ID"                         # leads de uma etapa, idem
 kommo_request PATCH "$DOMAIN/api/v4/leads/<ID>" '<json>'   # escrita, sem retry
 ```
 
-Headers: `Authorization: Bearer $TOKEN` e `Content-Type: application/json`. Rate limit 7 req/s:
-em loops, `sleep "$KOMMO_RATE_SLEEP"` (o `kommo_paginate` já espera); em 429, esperar 1s e fazer no máximo um retry. Com `curl`, use `-g` em
-URLs com `filter[...][]`.
+### Rate limit
+
+7 req/s. Em laço, `sleep "$KOMMO_RATE_SLEEP"` entre chamadas (o `kommo_paginate` já espera). Em 429,
+o `kommo_get` espera 1s e repete uma vez; `kommo_request` (escrita) nunca repete, porque repetir uma
+escrita pode duplicar o efeito: confira com um GET antes de tentar de novo. Com `curl` à mão, use `-g`
+em URLs com `filter[...][]`.
 
 ## Gates (resumo; regra completa em `references/safety-gates.md`)
 

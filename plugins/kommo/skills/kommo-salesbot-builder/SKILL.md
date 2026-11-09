@@ -77,9 +77,8 @@ Wrapper: `{"type_functionality": N, "model": {"text": "<JSON string>", "name": "
 
 ## Conta, credenciais e IDs
 
-Mesma convenção do plugin (veja a skill `kommo-crm`): perfil no config `kommo.local.json`
-(`$KOMMO_CONFIG`, `./.claude/` ou `~/.claude/`), token só em `KOMMO_ACCESS_TOKEN_<PERFIL>` ou
-`KOMMO_ACCESS_TOKEN`. O perfil-alvo é **explícito**: se o usuário não disse para qual conta, pergunte.
+Credenciais pelo resolvedor do plugin (`${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh`; regras em
+"Conta e credenciais" da skill `kommo-crm`). O perfil-alvo é **explícito**: se o usuário não disse para qual conta, pergunte.
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/skills/kommo-salesbot-builder/scripts/resolve_ids.sh" <perfil> \
@@ -155,6 +154,9 @@ importado, age sobre leads reais. Por isso:
 | `tests/run_all.sh` | Roda todas as provas offline (corpus sintético ou `$SALESBOT_CORPUS`) |
 | `tests/roundtrip.py` | Prova: export → IR → export com diff semântico |
 | `tests/roundtrip_templates.py` | Prova: cada template regenera o bot-fonte |
+| `tests/test_validate.py` | Prova: o validador aceita o corpus e pega cada mutação malformada |
+| `tests/make_fixture_corpus.py` | Monta o corpus sintético a partir dos templates |
+| `tests/proof.py` | Caminhos e utilidades compartilhadas pelas provas |
 | `viz/salesbot-viewer.html` | Visualizador read-only de um export, abre no navegador sem dependências |
 
 ## Corpus de prova

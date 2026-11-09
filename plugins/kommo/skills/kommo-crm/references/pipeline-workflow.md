@@ -36,7 +36,7 @@ Em seguida, contar leads por etapa (pagination até esgotar — `_total_items` �
 
 ```bash
 count_leads() {
-  kommo_paginate "$API/leads?filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=${PIPE}&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=$1&limit=250" leads \
+  kommo_stage_leads "$PIPE" "$1" \
     | jq -s 'map(length) | add // 0'
 }
 
@@ -92,7 +92,7 @@ Regras inegociáveis nessa hora (cf. `pipeline-api-quirks.md`):
 
 5. **`descriptions` array de objetos** `{id, level, description}`. Se UPDATE de descrição existente, passar o `id` (pegar do snapshot `?with=descriptions`). Se CREATE, sem id.
 
-6. **1 PATCH por etapa** — não existe batch PATCH em statuses (retorna 405). Sleep 0.18 entre PATCHs (rate limit 7 req/s).
+6. **1 PATCH por etapa** — não existe batch PATCH em statuses (retorna 405). `sleep "$KOMMO_RATE_SLEEP"` entre PATCHs.
 
 Template do PATCH:
 
@@ -130,7 +130,7 @@ Quando todos os leads da etapa órfã têm semântica clara pra ir pra mesma eta
 ```bash
 # Paginar toda a etapa origem para JSONL antes de escrever
 LEADS_TMP=$(mktemp)
-kommo_paginate "${DOMAIN}/api/v4/leads?filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=${PIPE}&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=${FROM}&limit=250" leads \
+kommo_stage_leads "$PIPE" "$FROM" \
   | jq -c '.[]' > "$LEADS_TMP"
 
 # PATCH em lotes de até 250, com readback da resposta antes do próximo lote

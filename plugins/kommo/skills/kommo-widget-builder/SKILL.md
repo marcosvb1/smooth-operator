@@ -153,9 +153,8 @@ guessing.
 
 ## Credenciais
 
-Mesma convenção do plugin (veja a skill `kommo-crm`): perfil no config `kommo.local.json`
-(`$KOMMO_CONFIG`, `./.claude/` ou `~/.claude/`), token só em `KOMMO_ACCESS_TOKEN_<PERFIL>` ou
-`KOMMO_ACCESS_TOKEN`. Se houver mais de uma conta configurada e o pedido não disser qual, pergunte.
+Credenciais pelo resolvedor do plugin (`${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh`; regras em
+"Conta e credenciais" da skill `kommo-crm`). Se houver mais de uma conta configurada e o pedido não disser qual, pergunte.
 
 O **token da integração** (long-lived, escopos `crm` e outros) é gerado na aba "Chaves e escopos"
 da integração privada. **Nunca** coloque no `script.js` (o JS do widget é público): no Worker ele

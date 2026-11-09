@@ -17,10 +17,7 @@
 # Comportamento:
 #   - Credenciais via kommo_env.sh (perfil do config + token em variável de ambiente).
 #   - GET /pipelines/{id}/statuses (1 req) para listar as etapas.
-#   - Para cada etapa (editável e de sistema), pagina
-#     /leads?filter[statuses][0][pipeline_id]=...&filter[statuses][0][status_id]=...
-#     filter[status_id]=ID direto é IGNORADO em silêncio; só a sintaxe aninhada funciona.
-#   - Paginação e rate limit via kommo_paginate.
+#   - Para cada etapa (editável e de sistema), pagina os leads com kommo_stage_leads.
 #
 # Compatível com bash 3 (padrão do macOS). Não usa declare -A.
 
@@ -64,7 +61,7 @@ STATUSES_JSON=$(kommo_get "$API/leads/pipelines/$PIPE/statuses?with=descriptions
 STAGE_COUNT=$(echo "$STATUSES_JSON" | jq 'length')
 echo "  $STAGE_COUNT estágios" >&2
 
-# ---- Each status: paginate /leads com syntax correta filter[statuses][0][...]
+# ---- Cada etapa: leads paginados
 ROWS_FILE=$(mktemp)
 PAGES_FILE=$(mktemp)
 SUCCESS=0
@@ -87,7 +84,7 @@ for ((i=0; i<STAGE_COUNT; i++)); do
   SEDIT=$(echo "$STATUSES_JSON" | jq -r ".[$i].is_editable")
   SSORT=$(echo "$STATUSES_JSON" | jq -r ".[$i].sort")
 
-  kommo_paginate "$API/leads?filter[statuses][0][pipeline_id]=${PIPE}&filter[statuses][0][status_id]=${SID}&with=source_id&limit=250" leads > "$PAGES_FILE"
+  kommo_stage_leads "$PIPE" "$SID" with=source_id > "$PAGES_FILE"
   COUNT=0
   while IFS= read -r PAGE_LEADS; do
     COUNT=$((COUNT + $(echo "$PAGE_LEADS" | jq 'length')))

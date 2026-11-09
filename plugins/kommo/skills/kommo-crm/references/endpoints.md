@@ -1,17 +1,10 @@
-# Kommo API v4 — Receitas curl
+# Kommo API v4 — receitas
 
-Endpoints da API v4. `DOMAIN` e `TOKEN` vêm do perfil resolvido por `${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh` (domínio no config `kommo.local.json`, token em `KOMMO_ACCESS_TOKEN_<PERFIL>`). Nos exemplos, `TOKEN` é sempre a variável, nunca o valor.
+Endpoints da API v4, chamados pelo cliente do plugin depois de `source "${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh" && kommo_load_credentials <perfil>` (veja "Conta e credenciais" no `SKILL.md`). `kommo_get` e `kommo_request` cuidam de token, headers, `-g` e status HTTP; aqui ficam só endpoint e payload.
 
-Headers padrão em toda chamada:
+**Rate limit:** 7 req/s (doc oficial: developers.kommo.com/docs/limitations). 429 = excedeu; 403 = IP bloqueado por violação repetida. Máx. 250 entidades por página/batch (recomendado 50 em escrita). Política de espera e retry: seção "Rate limit" do `SKILL.md`.
 
-```
-Authorization: Bearer $TOKEN
-Content-Type: application/json
-```
-
-**Rate limit:** 7 req/s (doc oficial: developers.kommo.com/docs/limitations). 429 = excedeu; 403 = IP bloqueado por violação repetida. Máx. 250 entidades por página/batch (recomendado 50 em escrita). Em loops, usar `sleep 0.18` entre requests.
-
-**`curl` com `filter[x][]` exige `-g` (`--globoff`).** Sem ele o curl lê `[]` como range, falha com `bad range in URL` e, com `-s`, não imprime nada: parece um 204 legítimo. No zsh, colchetes sem aspas viram glob; use aspas ou URL-encode (`%5B`/`%5D`).
+**Com `curl` à mão, `filter[x][]` exige `-g` (`--globoff`)** (os helpers já usam). Sem ele o curl lê `[]` como range, falha com `bad range in URL` e, com `-s`, não imprime nada: parece um 204 legítimo. No zsh, colchetes sem aspas viram glob; use aspas ou URL-encode (`%5B`/`%5D`).
 
 ---
 
@@ -19,15 +12,12 @@ Content-Type: application/json
 
 ### Listar funis
 ```bash
-curl -s -X GET "DOMAIN/api/v4/leads/pipelines" -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/leads/pipelines"
 ```
 
 ### Criar funil com etapas
 ```bash
-curl -s -X POST "DOMAIN/api/v4/leads/pipelines" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{
+kommo_request POST "$DOMAIN/api/v4/leads/pipelines" '[{
     "name": "Nome do Funil",
     "is_main": false,
     "sort": 10,
@@ -45,16 +35,12 @@ curl -s -X POST "DOMAIN/api/v4/leads/pipelines" \
 
 ### Editar funil
 ```bash
-curl -s -X PATCH "DOMAIN/api/v4/leads/pipelines/PIPELINE_ID" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Novo Nome"}'
+kommo_request PATCH "$DOMAIN/api/v4/leads/pipelines/PIPELINE_ID" '{"name": "Novo Nome"}'
 ```
 
 ### Deletar funil (destrutivo — confirmar antes)
 ```bash
-curl -s -X DELETE "DOMAIN/api/v4/leads/pipelines/PIPELINE_ID" \
-  -H "Authorization: Bearer TOKEN"
+kommo_request DELETE "$DOMAIN/api/v4/leads/pipelines/PIPELINE_ID"
 ```
 
 **Limites:** 50 funis/conta, 100 etapas/funil.
@@ -65,30 +51,22 @@ curl -s -X DELETE "DOMAIN/api/v4/leads/pipelines/PIPELINE_ID" \
 
 ### Listar etapas
 ```bash
-curl -s -X GET "DOMAIN/api/v4/leads/pipelines/PIPELINE_ID/statuses" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/leads/pipelines/PIPELINE_ID/statuses"
 ```
 
 ### Adicionar etapas
 ```bash
-curl -s -X POST "DOMAIN/api/v4/leads/pipelines/PIPELINE_ID/statuses" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{"name": "Nova Etapa", "sort": 25, "color": "#99ccff"}]'
+kommo_request POST "$DOMAIN/api/v4/leads/pipelines/PIPELINE_ID/statuses" '[{"name": "Nova Etapa", "sort": 25, "color": "#99ccff"}]'
 ```
 
 ### Editar etapa
 ```bash
-curl -s -X PATCH "DOMAIN/api/v4/leads/pipelines/PIPELINE_ID/statuses/STATUS_ID" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Nome Atualizado", "color": "#ffcc66"}'
+kommo_request PATCH "$DOMAIN/api/v4/leads/pipelines/PIPELINE_ID/statuses/STATUS_ID" '{"name": "Nome Atualizado", "color": "#ffcc66"}'
 ```
 
 ### Deletar etapa (destrutivo)
 ```bash
-curl -s -X DELETE "DOMAIN/api/v4/leads/pipelines/PIPELINE_ID/statuses/STATUS_ID" \
-  -H "Authorization: Bearer TOKEN"
+kommo_request DELETE "$DOMAIN/api/v4/leads/pipelines/PIPELINE_ID/statuses/STATUS_ID"
 ```
 
 ### Cores aceitas em etapas
@@ -101,18 +79,14 @@ Use somente a palette oficial de 21 cores em `pipeline-api-quirks.md`. Cores leg
 
 ### Listar campos
 ```bash
-curl -s -X GET "DOMAIN/api/v4/ENTITY_TYPE/custom_fields" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/ENTITY_TYPE/custom_fields"
 ```
 
 `ENTITY_TYPE`: `leads` | `contacts` | `companies` | `customers`
 
 ### Criar campos personalizados
 ```bash
-curl -s -X POST "DOMAIN/api/v4/ENTITY_TYPE/custom_fields" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[
+kommo_request POST "$DOMAIN/api/v4/ENTITY_TYPE/custom_fields" '[
     {"name": "Campo Texto", "type": "text"},
     {"name": "Campo Número", "type": "numeric"},
     {"name": "Campo Data", "type": "date"},
@@ -136,16 +110,12 @@ curl -s -X POST "DOMAIN/api/v4/ENTITY_TYPE/custom_fields" \
 
 ### Editar campo
 ```bash
-curl -s -X PATCH "DOMAIN/api/v4/ENTITY_TYPE/custom_fields/FIELD_ID" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Novo Nome"}'
+kommo_request PATCH "$DOMAIN/api/v4/ENTITY_TYPE/custom_fields/FIELD_ID" '{"name": "Novo Nome"}'
 ```
 
 ### Deletar campo (destrutivo — apaga dados)
 ```bash
-curl -s -X DELETE "DOMAIN/api/v4/ENTITY_TYPE/custom_fields/FIELD_ID" \
-  -H "Authorization: Bearer TOKEN"
+kommo_request DELETE "$DOMAIN/api/v4/ENTITY_TYPE/custom_fields/FIELD_ID"
 ```
 
 ---
@@ -154,8 +124,7 @@ curl -s -X DELETE "DOMAIN/api/v4/ENTITY_TYPE/custom_fields/FIELD_ID" \
 
 ### Listar leads (whitelist de filtros)
 ```bash
-curl -s -X GET "DOMAIN/api/v4/leads?with=contacts&limit=50&page=1" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/leads?with=contacts&limit=50&page=1"
 ```
 
 **Filtros aceitos em `/leads` (outros são ignorados silenciosamente — ver `pitfalls.md`):**
@@ -171,18 +140,14 @@ curl -s -X GET "DOMAIN/api/v4/leads?with=contacts&limit=50&page=1" \
 
 ### Buscar lead por ID com embeds
 ```bash
-curl -s -X GET "DOMAIN/api/v4/leads/LEAD_ID?with=contacts,catalog_elements,loss_reason,source_id" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/leads/LEAD_ID?with=contacts,catalog_elements,loss_reason,source_id"
 ```
 
 Embeds (`with=`) suportados: `contacts`, `catalog_elements`, `loss_reason`, `source_id`, `is_price_modified_by_robot`, `only_deleted` (separados por vírgula).
 
 ### Criar lead
 ```bash
-curl -s -X POST "DOMAIN/api/v4/leads" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{
+kommo_request POST "$DOMAIN/api/v4/leads" '[{
     "name": "Nome do Lead",
     "price": 5000,
     "pipeline_id": 123,
@@ -199,18 +164,12 @@ curl -s -X POST "DOMAIN/api/v4/leads" \
 
 ### Mover lead de etapa
 ```bash
-curl -s -X PATCH "DOMAIN/api/v4/leads/LEAD_ID" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"status_id": NOVO_STATUS_ID, "pipeline_id": PIPELINE_ID}'
+kommo_request PATCH "$DOMAIN/api/v4/leads/LEAD_ID" '{"status_id": NOVO_STATUS_ID, "pipeline_id": PIPELINE_ID}'
 ```
 
 ### Atualizar campos do lead
 ```bash
-curl -s -X PATCH "DOMAIN/api/v4/leads/LEAD_ID" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
+kommo_request PATCH "$DOMAIN/api/v4/leads/LEAD_ID" '{
     "custom_fields_values": [
       {"field_id": 111, "values": [{"value": "novo valor"}]}
     ]
@@ -219,10 +178,7 @@ curl -s -X PATCH "DOMAIN/api/v4/leads/LEAD_ID" \
 
 ### Adicionar/remover tags de lead
 ```bash
-curl -s -X PATCH "DOMAIN/api/v4/leads/LEAD_ID" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
+kommo_request PATCH "$DOMAIN/api/v4/leads/LEAD_ID" '{
     "tags_to_add": [{"name": "nova_tag"}],
     "tags_to_delete": [{"name": "tag_antiga"}]
   }'
@@ -234,30 +190,24 @@ curl -s -X PATCH "DOMAIN/api/v4/leads/LEAD_ID" \
 
 ### Listar contatos
 ```bash
-curl -s -X GET "DOMAIN/api/v4/contacts?limit=50" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/contacts?limit=50"
 ```
 
 ### Buscar contato por ID com leads vinculados
 ```bash
-curl -s -X GET "DOMAIN/api/v4/contacts/CONTACT_ID?with=leads,customers,catalog_elements" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/contacts/CONTACT_ID?with=leads,customers,catalog_elements"
 ```
 
 ### Listar todos os leads de um contato
 Substitui `filter[contact_id]` que NÃO funciona em `/leads` (ver `pitfalls.md`).
 
 ```bash
-curl -s -X GET "DOMAIN/api/v4/contacts/CONTACT_ID?with=leads" \
-  -H "Authorization: Bearer TOKEN" | jq '._embedded.leads'
+kommo_get "$DOMAIN/api/v4/contacts/CONTACT_ID?with=leads" | jq '._embedded.leads'
 ```
 
 ### Criar contato
 ```bash
-curl -s -X POST "DOMAIN/api/v4/contacts" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{
+kommo_request POST "$DOMAIN/api/v4/contacts" '[{
     "name": "Nome do Contato",
     "first_name": "Nome",
     "last_name": "Sobrenome",
@@ -270,10 +220,7 @@ curl -s -X POST "DOMAIN/api/v4/contacts" \
 
 ### Atualizar contato
 ```bash
-curl -s -X PATCH "DOMAIN/api/v4/contacts/CONTACT_ID" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Novo Nome"}'
+kommo_request PATCH "$DOMAIN/api/v4/contacts/CONTACT_ID" '{"name": "Novo Nome"}'
 ```
 
 ---
@@ -282,16 +229,12 @@ curl -s -X PATCH "DOMAIN/api/v4/contacts/CONTACT_ID" \
 
 ### Listar empresas
 ```bash
-curl -s -X GET "DOMAIN/api/v4/companies?limit=50" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/companies?limit=50"
 ```
 
 ### Criar empresa
 ```bash
-curl -s -X POST "DOMAIN/api/v4/companies" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{"name": "Nome da Empresa"}]'
+kommo_request POST "$DOMAIN/api/v4/companies" '[{"name": "Nome da Empresa"}]'
 ```
 
 ---
@@ -300,16 +243,12 @@ curl -s -X POST "DOMAIN/api/v4/companies" \
 
 ### Listar tags
 ```bash
-curl -s -X GET "DOMAIN/api/v4/ENTITY_TYPE/tags" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/ENTITY_TYPE/tags"
 ```
 
 ### Criar tags
 ```bash
-curl -s -X POST "DOMAIN/api/v4/ENTITY_TYPE/tags" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{"name": "Tag Nova", "color": "option1"}]'
+kommo_request POST "$DOMAIN/api/v4/ENTITY_TYPE/tags" '[{"name": "Tag Nova", "color": "option1"}]'
 ```
 
 ---
@@ -318,16 +257,12 @@ curl -s -X POST "DOMAIN/api/v4/ENTITY_TYPE/tags" \
 
 ### Listar tarefas
 ```bash
-curl -s -X GET "DOMAIN/api/v4/tasks?limit=50" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/tasks?limit=50"
 ```
 
 ### Criar tarefa
 ```bash
-curl -s -X POST "DOMAIN/api/v4/tasks" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{
+kommo_request POST "$DOMAIN/api/v4/tasks" '[{
     "text": "Descrição da tarefa",
     "complete_till": 1735689600,
     "entity_id": 123,
@@ -345,16 +280,12 @@ curl -s -X POST "DOMAIN/api/v4/tasks" \
 
 ### Listar notas de um lead
 ```bash
-curl -s -X GET "DOMAIN/api/v4/leads/LEAD_ID/notes" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/leads/LEAD_ID/notes"
 ```
 
 ### Adicionar nota
 ```bash
-curl -s -X POST "DOMAIN/api/v4/leads/LEAD_ID/notes" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{
+kommo_request POST "$DOMAIN/api/v4/leads/LEAD_ID/notes" '[{
     "note_type": "common",
     "params": {"text": "Texto da nota"}
   }]'
@@ -366,16 +297,12 @@ curl -s -X POST "DOMAIN/api/v4/leads/LEAD_ID/notes" \
 
 ### Listar webhooks
 ```bash
-curl -s -X GET "DOMAIN/api/v4/webhooks" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/webhooks"
 ```
 
 ### Criar webhook
 ```bash
-curl -s -X POST "DOMAIN/api/v4/webhooks" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"destination": "https://meu-servidor.com/webhook", "settings": ["add_lead", "update_lead", "status_lead"]}'
+kommo_request POST "$DOMAIN/api/v4/webhooks" '{"destination": "https://meu-servidor.com/webhook", "settings": ["add_lead", "update_lead", "status_lead"]}'
 ```
 
 ---
@@ -384,14 +311,12 @@ curl -s -X POST "DOMAIN/api/v4/webhooks" \
 
 ### Info da conta
 ```bash
-curl -s -X GET "DOMAIN/api/v4/account?with=users_groups,task_types" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/account?with=users_groups,task_types"
 ```
 
 ### Listar usuários
 ```bash
-curl -s -X GET "DOMAIN/api/v4/users" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/users"
 ```
 
 ---
@@ -400,22 +325,17 @@ curl -s -X GET "DOMAIN/api/v4/users" \
 
 ### Listar catálogos
 ```bash
-curl -s -X GET "DOMAIN/api/v4/catalogs" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/catalogs"
 ```
 
 ### Criar catálogo
 ```bash
-curl -s -X POST "DOMAIN/api/v4/catalogs" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{"name": "Produtos", "type": "regular"}]'
+kommo_request POST "$DOMAIN/api/v4/catalogs" '[{"name": "Produtos", "type": "regular"}]'
 ```
 
 ### Listar itens de um catálogo
 ```bash
-curl -s -X GET "DOMAIN/api/v4/catalogs/CATALOG_ID/elements" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/catalogs/CATALOG_ID/elements"
 ```
 
 ---
@@ -424,16 +344,12 @@ curl -s -X GET "DOMAIN/api/v4/catalogs/CATALOG_ID/elements" \
 
 ### Vincular contato a lead
 ```bash
-curl -s -X POST "DOMAIN/api/v4/leads/LEAD_ID/links" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{"to_entity_id": CONTACT_ID, "to_entity_type": "contacts"}]'
+kommo_request POST "$DOMAIN/api/v4/leads/LEAD_ID/links" '[{"to_entity_id": CONTACT_ID, "to_entity_type": "contacts"}]'
 ```
 
 ### Listar links de uma entidade
 ```bash
-curl -s -X GET "DOMAIN/api/v4/ENTITY_TYPE/ENTITY_ID/links" \
-  -H "Authorization: Bearer TOKEN"
+kommo_get "$DOMAIN/api/v4/ENTITY_TYPE/ENTITY_ID/links"
 ```
 
 ---
@@ -450,10 +366,7 @@ Não existe CRUD de bot pela API (criar/editar é pela UI; veja a skill `kommo-s
 
 ### Disparar salesbot
 ```bash
-curl -s -X POST "DOMAIN/api/v4/bots/BOT_ID/run" \
-  -H "Authorization: Bearer TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '[{"entity_id": LEAD_ID, "entity_type": "leads"}]'
+kommo_request POST "$DOMAIN/api/v4/bots/BOT_ID/run" '[{"entity_id": LEAD_ID, "entity_type": "leads"}]'
 ```
 
 Disparar bot em lead real é WRITE (o bot age sobre o lead); em mais de 10 leads, é BULK.
@@ -468,4 +381,4 @@ Disparar bot em lead real é WRITE (o bot age sobre o lead); em mais de 10 leads
 | 402 | Plano não suporta | Informar limitação ao solicitante |
 | 403 | IP bloqueado (rate limit excedido) | Esperar; reduzir frequência |
 | 404 | Entidade não encontrada | Validar ID |
-| 429 | Rate limit (>7 req/s) | Sleep 1s e retry |
+| 429 | Rate limit (>7 req/s) | `kommo_get` espera 1s e repete uma vez; escrita não repete (veja "Rate limit" no `SKILL.md`) |

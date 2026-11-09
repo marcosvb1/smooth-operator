@@ -4,7 +4,8 @@
 Uso: python3 fake_kommo.py <arquivo_de_porta> &   (grava a porta escolhida no arquivo)
 
 Cada rota tem uma lista de páginas; ?page=N além da última responde 204, como o Kommo.
-Rota desconhecida também responde 204.
+Rota desconhecida também responde 204. /api/v4/busy responde 429 nas primeiras
+?n= chamadas (padrão 1) e depois 200, para testar o retry do kommo_get.
 """
 import http.server
 import json
@@ -33,13 +34,29 @@ ROUTES = {
 }
 
 
+HITS = {}
+
+
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
     def do_GET(self):
         url = urllib.parse.urlparse(self.path)
-        n = int(urllib.parse.parse_qs(url.query).get("page", ["1"])[0])
+        query = urllib.parse.parse_qs(url.query)
+        if url.path == "/api/v4/busy":
+            HITS[self.path] = HITS.get(self.path, 0) + 1
+            if HITS[self.path] <= int(query.get("n", ["1"])[0]):
+                self.send_response(429)
+                self.end_headers()
+                return
+            data = b'{"ok": true}'
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        n = int(query.get("page", ["1"])[0])
         pages = ROUTES.get(url.path, [])
         if n > len(pages):
             self.send_response(204)
@@ -50,6 +67,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    do_PATCH = do_GET
 
 
 if __name__ == "__main__":

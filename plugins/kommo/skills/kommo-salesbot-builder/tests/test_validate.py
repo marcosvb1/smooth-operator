@@ -32,7 +32,7 @@ def positive(corpus):
 
 
 def mutations(base):
-    """Return list of (name, mutated_wrapper, expected_error_code)."""
+    """Return list of (name, mutated_wrapper or None if base lacks the feature, expected_error_code)."""
     out = []
 
     m = copy.deepcopy(base); del m["model"]["text"]
@@ -55,7 +55,7 @@ def mutations(base):
     if target:
         t[target]["block_uuid"] = "00000000-0000-0000-0000-000000000000"
         m["model"]["text"] = json.dumps(t)
-        out.append(("block_uuid mismatch", m, "SYNC_UUID"))
+    out.append(("block_uuid mismatch", m if target else None, "SYNC_UUID"))
 
     m = copy.deepcopy(base); pos = json.loads(m["model"]["positions"])
     for b in pos:
@@ -89,7 +89,7 @@ def mutations(base):
             break
     if done:
         m["model"]["text"] = json.dumps(t)
-        out.append(("dangling waits target", m, "GOTO_DANGLE"))
+    out.append(("dangling waits target", m if done else None, "GOTO_DANGLE"))
 
     # dangling action links.block (branch edge in positions)
     m = copy.deepcopy(base); pos = json.loads(m["model"]["positions"]); done = False
@@ -109,7 +109,7 @@ def mutations(base):
             break
     if done:
         m["model"]["positions"] = json.dumps(pos)
-        out.append(("dangling action links.block", m, "POS_LINK_DANGLE"))
+    out.append(("dangling action links.block", m if done else None, "POS_LINK_DANGLE"))
 
     # remove the single start block
     m = copy.deepcopy(base); pos = json.loads(m["model"]["positions"])
@@ -126,7 +126,7 @@ def mutations(base):
             done = True
     if done:
         m["model"]["text"] = json.dumps(t)
-        out.append(("change_status missing pipeline_id", m, "PIPELINE_REQUIRED"))
+    out.append(("change_status missing pipeline_id", m if done else None, "PIPELINE_REQUIRED"))
 
     # chat_sources id as string instead of int (structural type check)
     m = copy.deepcopy(base); t = json.loads(m["model"]["text"]); done = False
@@ -137,7 +137,7 @@ def mutations(base):
             done = True
     if done:
         m["model"]["text"] = json.dumps(t)
-        out.append(("chat_sources id as string", m, "CHATSRC_TYPE"))
+    out.append(("chat_sources id as string", m if done else None, "CHATSRC_TYPE"))
 
     return out
 
@@ -163,6 +163,10 @@ def main():
         base = json.load(fh)
     neg_fail = []
     for name, w, expect in mutations(base):
+        if w is None:
+            print(f"  ✗ {name:<32} the base bot has nothing to mutate; pick a base that has it")
+            neg_fail.append(name)
+            continue
         codes = error_codes(w)
         caught = expect in codes
         print(f"  {'✓' if caught else '✗'} {name:<32} expect [{expect}] -> {codes if codes else 'NOT CAUGHT'}")

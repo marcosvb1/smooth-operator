@@ -23,21 +23,21 @@ from compile import compile_template
 from salesbot_model import ir_to_export, load_export, parse_to_ir, semantic_projection
 
 
-def collect(tpl, src, sstr, snum):
+def collect(tpl, src, sentinels, sstr, snum):
     """Walk template.lir vs source IR in parallel; record placeholder -> original value."""
     if isinstance(tpl, str) and tpl.startswith("<<") and tpl.endswith(">>"):
         sstr[tpl[2:-2]] = src
     elif isinstance(tpl, bool):
         return
-    elif isinstance(tpl, int) and tpl < 0:  # negative numeric sentinel
+    elif isinstance(tpl, int) and tpl in sentinels:
         snum[tpl] = src
     elif isinstance(tpl, dict) and isinstance(src, dict):
         for k in tpl:
             if k in src:
-                collect(tpl[k], src[k], sstr, snum)
+                collect(tpl[k], src[k], sentinels, sstr, snum)
     elif isinstance(tpl, list) and isinstance(src, list) and len(tpl) == len(src):
         for a, b in zip(tpl, src):
-            collect(a, b, sstr, snum)
+            collect(a, b, sentinels, sstr, snum)
 
 
 def main():
@@ -49,9 +49,9 @@ def main():
         tpl = json.load(open(os.path.join(TEMPLATES, tf)))
         src = load_export(os.path.join(corpus, tpl["meta"]["source_bot"]))
         src_ir = parse_to_ir(src)
-        sstr, snum = {}, {}
-        collect(tpl["lir"], src_ir, sstr, snum)
         sent2name = {s["sentinel"]: s["name"] for s in tpl["slots"] if s.get("sentinel") is not None}
+        sstr, snum = {}, {}
+        collect(tpl["lir"], src_ir, set(sent2name), sstr, snum)
         values = dict(sstr)
         for sent, v in snum.items():
             if sent in sent2name:

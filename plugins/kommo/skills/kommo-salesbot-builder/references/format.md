@@ -260,8 +260,7 @@ broadcast); `POS_ORPHAN` (bloco question em positions sem step no text); `BLOCK_
 `pipeline_id`** (cross-membership; obs.: 142/143 são status de sistema "ganho/perdido" presentes em
 TODA pipeline); `custom_fields_id` existe; `change_responsible_user.value`, `send_internal.user_id`,
 `trigger.settings.responsible_user` são usuários da conta; `set_custom_fields` valor digit-string em
-CF select é enum válido daquele CF; `{{*.cf.ID(.ENUM)}}` resolve; `start.bot` ∈ `inventory.bots`
-(se a lista existir). WARN: `chat_source` só limpo se em `chat_sources.confirmed`.
+CF select é enum válido daquele CF; `{{*.cf.ID(.ENUM)}}` resolve. WARN: `chat_source` só limpo se em `chat_sources.confirmed`.
 
 ## 10. Perguntas em aberto — resolver no 1º import real
 

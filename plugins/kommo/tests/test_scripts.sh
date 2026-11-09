@@ -22,13 +22,14 @@ bash -n \
   "$ENV_SH" \
   "$SCRIPT_DIR/dump_contacts.sh" \
   "$SCRIPT_DIR/funnel_snapshot.sh" \
-  "$SCRIPT_DIR/pipeline_drift.sh"
+  "$SCRIPT_DIR/pipeline_drift.sh" \
+  "$PLUGIN/skills/kommo-salesbot-builder/scripts/resolve_ids.sh"
 
 # 1. Domínio e token por perfil vindos do ambiente valem mesmo com KOMMO_CONFIG quebrado.
 KOMMO_DOMAIN_CLIENTE_A="example.kommo.com" \
 KOMMO_ACCESS_TOKEN_CLIENTE_A="dummy" \
 KOMMO_CONFIG="/definitely/missing" \
-bash -c 'source "$1"; kommo_load_credentials cliente-a; [[ "$DOMAIN" == "https://example.kommo.com" && "$KOMMO_PROFILE" == "cliente-a" ]]' _ "$ENV_SH"
+bash -ec 'source "$1"; kommo_load_credentials cliente-a; [[ "$DOMAIN" == "https://example.kommo.com" && "$KOMMO_PROFILE" == "cliente-a" ]]' _ "$ENV_SH"
 
 # 2. Config local: domínio do perfil + token do ambiente; default_profile quando o perfil é omitido.
 mkdir -p "$WORK/.claude"
@@ -38,25 +39,25 @@ cat > "$WORK/.claude/kommo.local.json" <<'JSON'
               "cliente-b": {"domain": "https://b.kommo.com/", "access_token": "nunca-usado"}}}
 JSON
 KOMMO_ACCESS_TOKEN_CLIENTE_B="dummy" \
-bash -c 'source "$1"; kommo_load_credentials; [[ "$DOMAIN" == "https://b.kommo.com" && "$KOMMO_PROFILE" == "cliente-b" ]]' _ "$ENV_SH"
+bash -ec 'source "$1"; kommo_load_credentials; [[ "$DOMAIN" == "https://b.kommo.com" && "$KOMMO_PROFILE" == "cliente-b" ]]' _ "$ENV_SH"
 
 # 3. Token nunca vem do arquivo: sem env, falha com código 2 mesmo com access_token no JSON.
 set +e
-bash -c 'source "$1"; kommo_load_credentials cliente-b' _ "$ENV_SH" >/dev/null 2>&1
+bash -ec 'source "$1"; kommo_load_credentials cliente-b' _ "$ENV_SH" >/dev/null 2>&1
 RC=$?
 set -e
 [[ "$RC" -eq 2 ]]
 
 # 4. Token genérico serve para qualquer perfil.
 KOMMO_ACCESS_TOKEN="dummy" \
-bash -c 'source "$1"; kommo_load_credentials cliente-a; [[ "$DOMAIN" == "https://a.kommo.com" ]]' _ "$ENV_SH"
+bash -ec 'source "$1"; kommo_load_credentials cliente-a; [[ "$DOMAIN" == "https://a.kommo.com" ]]' _ "$ENV_SH"
 
 # 5. Vários perfis sem default_profile e sem perfil informado: pergunta, não escolhe (código 2).
 cat > "$WORK/.claude/kommo.local.json" <<'JSON'
 {"profiles": {"cliente-a": {"domain": "a.kommo.com"}, "cliente-b": {"domain": "b.kommo.com"}}}
 JSON
 set +e
-KOMMO_ACCESS_TOKEN="dummy" bash -c 'source "$1"; kommo_load_credentials' _ "$ENV_SH" >/dev/null 2>&1
+KOMMO_ACCESS_TOKEN="dummy" bash -ec 'source "$1"; kommo_load_credentials' _ "$ENV_SH" >/dev/null 2>&1
 RC=$?
 set -e
 [[ "$RC" -eq 2 ]]
@@ -64,18 +65,18 @@ set -e
 # 6. KOMMO_CONFIG tem prioridade sobre ./.claude/kommo.local.json.
 echo '{"profiles": {"outro": {"domain": "outro.kommo.com"}}}' > "$WORK/alt.json"
 KOMMO_CONFIG="$WORK/alt.json" KOMMO_ACCESS_TOKEN="dummy" \
-bash -c 'source "$1"; kommo_load_credentials; [[ "$DOMAIN" == "https://outro.kommo.com" ]]' _ "$ENV_SH"
+bash -ec 'source "$1"; kommo_load_credentials; [[ "$DOMAIN" == "https://outro.kommo.com" ]]' _ "$ENV_SH"
 rm -f "$WORK/.claude/kommo.local.json"
 
 # 7. Falha de transporte continua sendo falha, não vira relatório vazio.
 KOMMO_DOMAIN_TESTE="http://127.0.0.1:9" \
 KOMMO_ACCESS_TOKEN_TESTE="dummy" \
-bash -c 'source "$1"; kommo_load_credentials teste; ! kommo_get "$DOMAIN/api/v4/account" >/dev/null 2>&1' _ "$ENV_SH"
+bash -ec 'source "$1"; kommo_load_credentials teste; ! kommo_get "$DOMAIN/api/v4/account" >/dev/null 2>&1' _ "$ENV_SH"
 
-bash -c 'source "$1"; [[ "$(kommo_collection_count "" contacts)" == "0" ]]; [[ "$(kommo_collection_json "" leads)" == "[]" ]]' _ "$ENV_SH"
+bash -ec 'source "$1"; [[ "$(kommo_collection_json "" leads)" == "[]" ]]' _ "$ENV_SH"
 KOMMO_DOMAIN_TESTE="http://127.0.0.1:9" \
 KOMMO_ACCESS_TOKEN_TESTE="dummy" \
-bash -c 'source "$1"; kommo_load_credentials teste; ! kommo_paginate "$DOMAIN/api/v4/contacts" contacts >/dev/null 2>&1' _ "$ENV_SH"
+bash -ec 'source "$1"; kommo_load_credentials teste; ! kommo_paginate "$DOMAIN/api/v4/contacts" contacts >/dev/null 2>&1' _ "$ENV_SH"
 
 # 7b. kommo_paginate segue _links.next, para na página vazia (204) e devolve uma linha por página.
 PORT_FILE="$WORK/port"
@@ -84,15 +85,23 @@ SERVER_PID=$!
 trap 'kill "$SERVER_PID" 2>/dev/null; rm -rf "$WORK"' EXIT
 for _ in $(seq 50); do [[ -s "$PORT_FILE" ]] && break; sleep 0.1; done
 PAGES=$(KOMMO_DOMAIN_TESTE="http://127.0.0.1:$(cat "$PORT_FILE")" KOMMO_ACCESS_TOKEN_TESTE="dummy" \
-  bash -c 'source "$1"; kommo_load_credentials teste; kommo_paginate "$DOMAIN/api/v4/contacts?limit=250" contacts' _ "$ENV_SH")
+  bash -ec 'source "$1"; kommo_load_credentials teste; kommo_paginate "$DOMAIN/api/v4/contacts?limit=250" contacts' _ "$ENV_SH")
 [[ "$PAGES" == $'[{"id":1}]\n[{"id":2}]' ]]
+
+# 7a. kommo_get repete uma vez em 429; o kommo_request (escrita) nunca repete.
+FAKE="http://127.0.0.1:$(cat "$PORT_FILE")"
+KOMMO_DOMAIN_TESTE="$FAKE" KOMMO_ACCESS_TOKEN_TESTE="dummy" bash -ec '
+  source "$1"; kommo_load_credentials teste
+  [[ "$(kommo_get "$DOMAIN/api/v4/busy?id=get1" 2>/dev/null)" == "{\"ok\": true}" ]]
+  if kommo_get "$DOMAIN/api/v4/busy?id=get2&n=2" >/dev/null 2>&1; then exit 1; fi
+  if kommo_request PATCH "$DOMAIN/api/v4/busy?id=w1" "{}" >/dev/null 2>&1; then exit 1; fi' _ "$ENV_SH"
 
 # 7c. O inventário do salesbot sai do mesmo cliente, com os campos que o validate.py lê.
 INV=$(KOMMO_DOMAIN_TESTE="http://127.0.0.1:$(cat "$PORT_FILE")" KOMMO_ACCESS_TOKEN_TESTE="dummy" \
   "$PLUGIN/skills/kommo-salesbot-builder/scripts/resolve_ids.sh" teste 2>/dev/null)
 jq -e '.account_id == 1 and .pipelines[0].statuses[1].id == 142 and .users[0].id == 5
   and .lead_custom_fields[0].enums[0].id == 70 and .contact_custom_fields[0].enums == []
-  and .chat_sources.resolvable_via_api == false' <<<"$INV" >/dev/null
+  and .chat_sources.confirmed == []' <<<"$INV" >/dev/null
 
 # 8. Baseline com tabela histórica e tabela atual: a última tabela vence.
 BASELINE="$WORK/kommo-baselines/teste_1000.md"

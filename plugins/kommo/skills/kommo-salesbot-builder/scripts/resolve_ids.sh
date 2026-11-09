@@ -48,11 +48,16 @@ LEAD_CF=$(fields leads)
 CONTACT_CF=$(fields contacts)
 
 NOTE="chat_sources (ids de canal usados em send_message) não são enumeráveis por /api/v4/sources. Copie o id de um bot que já funciona no mesmo canal DESTA conta, ou confirme com o dono da conta. --scan-bots lista os ids vistos em exports."
-if SOURCES=$(kommo_get "$API/sources" 2>/dev/null) && [[ -n "$SOURCES" ]]; then
-  CHAT=$(jq '{resolvable_via_api: true, sources: [._embedded.sources[]? | {id, name, pipeline_id}]}' <<<"$SOURCES")
+# confirmed: ids de canal que alguém conferiu nesta conta; é a única lista que o validate.py aceita.
+CHAT=$(jq -n --arg note "$NOTE" '{confirmed: [], note: $note}')
+ERR_FILE=$(mktemp)
+if SOURCES=$(kommo_get "$API/sources" 2>"$ERR_FILE"); then
+  CHAT=$(jq --argjson s "${SOURCES:-null}" \
+    '. + {integration_sources: [($s // {})._embedded.sources[]? | {id, name, pipeline_id}]}' <<<"$CHAT")
 else
-  CHAT=$(jq -n --arg note "$NOTE" '{resolvable_via_api: false, note: $note}')
+  CHAT=$(jq --arg e "$(cat "$ERR_FILE")" '. + {integration_sources_error: $e}' <<<"$CHAT")
 fi
+rm -f "$ERR_FILE"
 if [[ -n "$SCAN" ]]; then
   SEEN=$(jq -n '[inputs | (input_filename | split("/") | last) as $f
       | (try (.model.text | fromjson) catch {}) | .. | objects
@@ -70,7 +75,7 @@ INVENTORY=$(jq -n \
     resolved_at: $at, pipelines: $pipelines, users: $users,
     lead_custom_fields: $lead_cf, contact_custom_fields: $contact_cf, chat_sources: $chat}')
 
-jq -r '"  pipelines=\(.pipelines | length) statuses=\([.pipelines[].statuses[]] | length) users=\(.users | length) lead_cf=\(.lead_custom_fields | length) contact_cf=\(.contact_custom_fields | length) chat_sources_api=\(.chat_sources.resolvable_via_api)"' <<<"$INVENTORY" >&2
+jq -r '"  pipelines=\(.pipelines | length) statuses=\([.pipelines[].statuses[]] | length) users=\(.users | length) lead_cf=\(.lead_custom_fields | length) contact_cf=\(.contact_custom_fields | length) chat_sources_confirmed=\(.chat_sources.confirmed | length)"' <<<"$INVENTORY" >&2
 if [[ -n "$OUT" ]]; then
   printf '%s\n' "$INVENTORY" > "$OUT"
   echo "  gravado em $OUT" >&2
