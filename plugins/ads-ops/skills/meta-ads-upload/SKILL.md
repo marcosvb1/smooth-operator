@@ -176,7 +176,7 @@ O runner recusa inputs com `<PLACEHOLDERS>` não preenchidos e inputs com `acces
 - `update`: criar creative com asset customization e apontar o ad existente para ele
 - `duplicate` + `job_type=campaigns` | `adsets` | `ads`: clonar pelo `/copies`
 
-Em `duplicate`, o input segue o padrão `items[]` com um `id` por objeto; campos no root valem para todos e campos no item sobrescrevem:
+Em todo input com `items[]`, um campo na raiz vale para todos os itens e o mesmo campo no item sobrescreve (`null` conta como ausente). Em `duplicate`, cada item traz o `id` do objeto a clonar, e estes campos se aplicam:
 
 | Campo | Descrição |
 |-------|-----------|

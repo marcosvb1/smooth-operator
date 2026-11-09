@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""Offline test of the Meta Ads runner: every template runs, no real write leaves dry-run,
+and --execute sends what the template asks for. The Graph API is faked; no token needed.
+
+Run: python3 plugins/ads-ops/tests/test_meta_job.py   (needs `requests` installed)
+"""
+import contextlib
+import io
+import json
+import os
+import re
+import sys
+import tempfile
+from pathlib import Path
+
+SKILL = Path(__file__).resolve().parents[1] / "skills" / "meta-ads-upload"
+sys.path.insert(0, str(SKILL / "scripts"))
+
+import requests  # noqa: E402
+
+import meta_ads_core  # noqa: E402
+import run_meta_job  # noqa: E402
+
+MODES = {
+    "adsets": "create", "image_ads": "create", "video_ads": "create", "existing_post_ads": "create",
+    "audit": "audit", "update_ads": "update",
+    "duplicate_campaigns": "duplicate", "duplicate_adsets": "duplicate", "duplicate_ads": "duplicate",
+}
+SENT = []
+
+
+class Response:
+    status_code = 200
+
+    def __init__(self, data):
+        self.data = data
+        self.text = json.dumps(data)
+
+    def json(self):
+        return self.data
+
+
+def fake_graph(method, url, params=None, data=None, files=None, headers=None, timeout=None):
+    path = url.split("/v25.0/", 1)[1]
+    SENT.append((method, path, params if method == "GET" else data))
+    if method == "GET":
+        if path.endswith("/adsets"):
+            return Response({"data": [{"id": "1", "name": "07 - Broad"}, {"id": "2", "name": "sem número"}]})
+        return Response({"picture": "https://example.com/thumb.jpg"})
+    if path.endswith("/copies"):
+        return Response({"copied_campaign_id": "c1", "copied_adset_id": "s1", "copied_ad_id": "a1"})
+    return Response({"id": f"id{len(SENT)}"})
+
+
+def run(name, execute):
+    raw = (SKILL / "templates" / f"{name}.template.json").read_text()
+    with tempfile.TemporaryDirectory() as tmp:
+        inp, out = Path(tmp, "in.json"), Path(tmp, "out.json")
+        inp.write_text(re.sub(r"<[A-Z0-9_]+>", "42", raw))
+        sys.argv = ["run_meta_job", "--mode", MODES[name], "--input", str(inp), "--output", str(out)]
+        sys.argv += ["--execute"] if execute else []
+        SENT.clear()
+        with contextlib.redirect_stdout(io.StringIO()):
+            rc = run_meta_job.main()
+        return rc, json.loads(out.read_text()), list(SENT)
+
+
+def main():
+    requests.request = fake_graph
+    meta_ads_core.time.sleep = lambda seconds: None
+    home = tempfile.mkdtemp()  # no ads-ops config: the context comes from the env vars below
+    os.chdir(home)
+    os.environ["HOME"] = home
+    os.environ.pop("ADS_OPS_CONFIG", None)
+    os.environ.update(META_ACCESS_TOKEN="dummy", META_AD_ACCOUNT="123", META_PAGE_ID="9", META_IG_USER_ID="77")
+    failures = []
+
+    def check(cond, msg):
+        if not cond:
+            failures.append(msg)
+
+    for name in MODES:
+        rc, report, sent = run(name, execute=False)
+        check(report["status"] == "ok", f"{name}: dry-run status {report['status']}")
+        check(all(method == "GET" for method, _, _ in sent), f"{name}: dry-run sent a write")
+
+    rc, report, _ = run("audit", execute=False)
+    check(report["result"]["next_adset_number"] == 8, "audit: next number after '07 - ...' is 8")
+
+    rc, report, sent = run("duplicate_adsets", execute=True)
+    check(report["result"]["items"][0]["copied_adset_id"] == "s1", "duplicate: copied id in the report")
+    check(sent == [("POST", "42/copies", {"deep_copy": "true", "rename_strategy": "DEEP_RENAME",
+                                          "rename_suffix": " - Copy", "status_option": "PAUSED"})],
+          f"duplicate_adsets: sent {sent}")
+
+    rc, report, sent = run("existing_post_ads", execute=True)
+    ads = [data for method, path, data in sent if path == "act_123/ads"]
+    check(len(ads) == 2 and all(json.loads(a["tracking_specs"])[0]["fb_pixel"] == ["42"] for a in ads),
+          "existing_post_ads: root tracking_specs reaches every ad")
+    creatives = [data for method, path, data in sent if path == "act_123/adcreatives"]
+    check(all(c["instagram_user_id"] == "77" and c["object_id"] == "9" for c in creatives),
+          "existing_post_ads: creative uses the IG account and the page")
+
+    rc, report, sent = run("video_ads", execute=True)
+    check(report["status"] == "ok" and report["result"]["ok"] == 2, f"video_ads: {report['result']}")
+    spec = json.loads([d for m, p, d in sent if p == "act_123/adcreatives"][0]["object_story_spec"])
+    check(spec["page_id"] == "9" and spec["instagram_user_id"] == "77" and "video_data" in spec,
+          "video_ads: story spec carries page, IG account and video")
+
+    for f in failures:
+        print("FAILED:", f)
+    print("meta job tests passed" if not failures else f"{len(failures)} failure(s)")
+    return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

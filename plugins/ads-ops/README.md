@@ -33,3 +33,9 @@ O runner do Meta precisa de Python 3 com `requests`. Os relatórios de execuçã
 - Nada é deletado; o que sai do ar é pausado.
 - IDs de conta vêm do perfil, de env vars, do JSON do job ou da referência local do projeto, nunca do texto da skill.
 - Se o projeto tiver uma referência local de Meta Ads (IDs por conta, rotas, convenção de nome), a skill a lê antes e ela vence os defaults.
+
+## Testes
+
+```bash
+python3 plugins/ads-ops/tests/test_meta_job.py   # runner do Meta contra uma Graph API falsa, sem token
+```
