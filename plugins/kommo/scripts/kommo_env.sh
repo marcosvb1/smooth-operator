@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Resolvedor de credenciais compartilhado pelos scripts do Kommo.
+# Credenciais e HTTP do plugin kommo: usado pelos scripts das skills, pelo
+# /kommo:setup e (via DOMAIN/TOKEN exportados) pelo devserver do widget.
 #
 # Config (sem tokens), procurado nesta ordem:
 #   1. $KOMMO_CONFIG
@@ -12,7 +13,7 @@
 # Token:   KOMMO_ACCESS_TOKEN_<PERFIL> > KOMMO_ACCESS_TOKEN (nunca do arquivo)
 # <PERFIL> = nome do perfil em maiúsculas, com '-' trocado por '_'.
 #
-# Exporta DOMAIN, TOKEN, KOMMO_PROFILE e KOMMO_CONFIG_FILE sem imprimir segredo.
+# Exporta DOMAIN, TOKEN e KOMMO_PROFILE sem imprimir segredo.
 
 kommo_find_config() {
   if [[ -n "${KOMMO_CONFIG:-}" ]]; then
@@ -35,6 +36,10 @@ kommo_load_credentials() {
   local cfg="" key domain_var token_var n
 
   cfg=$(kommo_find_config) || cfg=""
+  if [[ -n "$cfg" ]] && ! jq empty "$cfg" 2>/dev/null; then
+    printf 'ERRO: config inválido (não é JSON): %s\n' "$cfg" >&2
+    return 2
+  fi
 
   if [[ -z "$profile" && -n "$cfg" ]]; then
     profile=$(jq -r '.default_profile // empty' "$cfg")
@@ -80,47 +85,12 @@ kommo_load_credentials() {
   # O Kommo exige HTTPS; http:// só aparece nos testes locais (127.0.0.1).
   DOMAIN="${DOMAIN%/}"
   KOMMO_PROFILE="${profile:-default}"
-  KOMMO_CONFIG_FILE="$cfg"
 
-  export DOMAIN TOKEN KOMMO_PROFILE KOMMO_CONFIG_FILE
+  export DOMAIN TOKEN KOMMO_PROFILE
 }
 
-# GET com validação de HTTP e um retry em 429. O corpo só sai depois de um 2xx.
-kommo_get() {
-  local url="${1:?URL obrigatória}"
-  local attempt=1 status body
-
-  body=$(mktemp)
-  while [[ "$attempt" -le 2 ]]; do
-    status=$(curl -g -sS -o "$body" -w '%{http_code}' \
-      -K <(printf 'header = "Authorization: Bearer %s"\n' "$TOKEN") \
-      -H "Content-Type: application/json" \
-      "$url") || {
-        rm -f "$body"
-        printf 'ERRO: falha de rede em GET %s\n' "$url" >&2
-        return 1
-      }
-
-    if [[ "$status" -ge 200 && "$status" -lt 300 ]]; then
-      cat "$body"
-      rm -f "$body"
-      return 0
-    fi
-
-    if [[ "$status" == "429" && "$attempt" -eq 1 ]]; then
-      sleep 1
-      attempt=2
-      continue
-    fi
-
-    rm -f "$body"
-    printf 'ERRO: GET %s retornou HTTP %s\n' "$url" "$status" >&2
-    return 1
-  done
-}
-
-# Escrita validada. Nunca faz retry, porque repetir uma escrita pode duplicar
-# efeitos; quem chama confere o corpo e depois faz o readback com GET.
+# Uma chamada HTTP. Imprime o corpo só em 2xx. Sai com 1 em falha de rede ou
+# HTTP de erro, e com 3 em 429 (para o kommo_get decidir se repete).
 kommo_request() {
   local method="${1:?método HTTP obrigatório}"
   local url="${2:?URL obrigatória}"
@@ -148,20 +118,47 @@ kommo_request() {
 
   rm -f "$body"
   printf 'ERRO: %s %s retornou HTTP %s\n' "$method" "$url" "$status" >&2
+  [[ "$status" == "429" ]] && return 3
   return 1
 }
 
-# O Kommo usa HTTP 204 (corpo vazio) para indicar o fim de algumas coleções.
-kommo_collection_json() {
-  local body="${1:-}"
-  local collection="${2:?nome da coleção obrigatório}"
-  if [[ -z "$body" ]]; then
-    echo '[]'
-  else
-    echo "$body" | jq -c ".\"_embedded\".\"${collection}\" // []"
-  fi
+# Leitura: repete uma vez, depois de 1s, se a API devolver 429. Escritas vão
+# direto no kommo_request e nunca repetem, porque repetir pode duplicar efeitos.
+kommo_get() {
+  local url="${1:?URL obrigatória}" rc=0
+  kommo_request GET "$url" || rc=$?
+  [[ "$rc" -eq 3 ]] || return "$rc"
+  sleep 1
+  kommo_request GET "$url"
 }
 
-kommo_collection_count() {
-  kommo_collection_json "${1:-}" "${2:?nome da coleção obrigatório}" | jq 'length'
+# Limite da API: 7 req/s. Quem faz laço de requisições espera isto entre elas.
+KOMMO_RATE_SLEEP=0.18
+
+# Pagina uma coleção: imprime cada página como um array JSON (uma linha por página).
+# Para no corpo vazio (HTTP 204), na página sem itens ou quando não há _links.next.
+# Uso: kommo_paginate "$DOMAIN/api/v4/contacts?limit=250" contacts
+kommo_paginate() {
+  local url="${1:?URL obrigatória}"
+  local collection="${2:?nome da coleção obrigatório}"
+  local sep="?" page=1 resp items
+  [[ "$url" == *\?* ]] && sep="&"
+  while true; do
+    resp=$(kommo_get "${url}${sep}page=${page}") || return 1
+    [[ -n "$resp" ]] || return 0  # o Kommo responde 204, sem corpo, depois da última página
+    items=$(printf '%s' "$resp" | jq -c --arg c "$collection" '._embedded[$c] // []')
+    [[ "$items" == "[]" ]] && return 0
+    printf '%s\n' "$items"
+    [[ -n "$(printf '%s' "$resp" | jq -r '._links.next.href // empty')" ]] || return 0
+    page=$((page + 1))
+    sleep "$KOMMO_RATE_SLEEP"
+  done
+}
+
+# Leads de uma etapa, paginados (uma linha por página). O filtro por etapa precisa
+# de pipeline_id e status_id juntos; status_id sozinho é ignorado pela API.
+# Uso: kommo_stage_leads <pipeline_id> <status_id>   (cada lead vem com source_id)
+kommo_stage_leads() {
+  local pipe="${1:?pipeline_id obrigatório}" status="${2:?status_id obrigatório}"
+  kommo_paginate "$DOMAIN/api/v4/leads?filter[statuses][0][pipeline_id]=${pipe}&filter[statuses][0][status_id]=${status}&with=source_id&limit=250" leads
 }

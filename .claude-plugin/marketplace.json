@@ -13,7 +13,6 @@
       "name": "ads-ops",
       "source": "./plugins/ads-ops",
       "description": "Meta Ads and TikTok Ads operations with dry-run and paused creation, for any configured account.",
-      "version": "0.2.0",
       "category": "marketing",
       "keywords": [
         "meta-ads",
@@ -25,7 +24,6 @@
       "name": "kommo",
       "source": "./plugins/kommo",
       "description": "Kommo CRM operations with approval gates, funnel reports, pipeline redesign, validated Salesbots and widgets, for any configured account.",
-      "version": "0.1.0",
       "category": "sales",
       "keywords": [
         "kommo",
@@ -38,7 +36,6 @@
       "name": "smooth-operator",
       "source": "./plugins/smooth-operator",
       "description": "Prepare the workspace so Claude can operate real apps: mise-en-place builds a verified map of your account (accounts, IDs, fields, conventions, payloads, rules) that Claude reads before acting, instead of learning by trial and error mid-task.",
-      "version": "0.1.0",
       "category": "productivity",
       "keywords": [
         "mise-en-place",

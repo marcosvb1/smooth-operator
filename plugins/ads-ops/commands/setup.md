@@ -13,7 +13,7 @@ Configure os perfis de conta usados pelas skills `meta-ads-upload` e `tiktok-ads
 2. Se o arquivo já existir, leia e mostre os perfis atuais antes de mudar qualquer coisa. Preserve o que já existe.
 3. Pergunte a plataforma (Meta, TikTok ou as duas) e um nome curto para o perfil, em minúsculas com hífen (ex.: `cliente-a`).
 4. Colete os campos, um bloco por vez:
-   - **Meta**: `ad_account` (com ou sem `act_`), `page_id`, `ig_user_id` (opcional), `api_version` (opcional, default `v25.0`).
+   - **Meta**: `ad_account` (com ou sem `act_`), `page_id`, `ig_user_id` (opcional), `api_version` (opcional; sem ele vale a versão padrão do runner).
    - **TikTok**: `advertiser_id`, `timezone` (ex.: `America/Sao_Paulo`), `currency` (ex.: `BRL`), `display_name`, `landing_page` (opcional), `pixel_id` (opcional), `mcp_write_tool` e `mcp_report_tool` (opcionais, nomes das tools MCP se a conta usa um conector), e `naming` (opcional: padrões de nome para `campaign`, `adgroup` e `ad`).
 5. Pergunte se este perfil deve ser o `default_profile` daquela plataforma.
 6. Grave o JSON neste formato, mesclando com o que já existia:
@@ -35,7 +35,7 @@ Configure os perfis de conta usados pelas skills `meta-ads-upload` e `tiktok-ads
 }
 ```
 
-7. **Nunca** grave tokens nesse arquivo. No fim, diga quais variáveis de ambiente o usuário precisa definir no shell ou no gerenciador de segredos dele, com o nome do perfil em maiúsculas e `-` trocado por `_`:
+7. **Nunca** grave tokens nesse arquivo. No fim, diga quais variáveis de ambiente o usuário precisa definir no shell ou no gerenciador de segredos dele, com o nome do perfil em maiúsculas, com todo caractere que não é letra nem número trocado por `_`:
    - Meta: `META_ACCESS_TOKEN_<PERFIL>` (ou `META_ACCESS_TOKEN` para todas as contas)
    - TikTok: `TIKTOK_ACCESS_TOKEN_<PERFIL>` (ou `TIKTOK_ACCESS_TOKEN`)
 

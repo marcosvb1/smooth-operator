@@ -9,7 +9,6 @@
 #
 # Comportamento:
 #   - Credenciais via kommo_env.sh (perfil do config + token em variável de ambiente).
-#   - Pagina /contacts com limit=250 e sleep 0.18s entre páginas (rate limit 7 req/s).
 #   - Saída em JSONL, 1 contato por linha: id, name, created_at, updated_at, email,
 #     phone e `custom_fields` ({"<nome do campo>": "<valor>"}; campos multivalor
 #     viram lista). Filtre por custom field depois, com jq: a API ignora
@@ -21,8 +20,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=kommo_env.sh
-source "$SCRIPT_DIR/kommo_env.sh"
+# shellcheck source=../../../scripts/kommo_env.sh
+source "$SCRIPT_DIR/../../../scripts/kommo_env.sh"
 
 PROFILE="${1:?Uso: $0 <perfil> [output_path]}"
 OUTPUT="${2:-/tmp/kommo_${PROFILE}_contacts_$(date +%Y%m%d_%H%M%S).jsonl}"
@@ -38,20 +37,9 @@ TMP_OUTPUT=$(mktemp)
 cleanup() { rm -f "$TMP_OUTPUT"; }
 trap cleanup EXIT
 
-PAGE=1
-TOTAL=0
-LIMIT=250
-
-while true; do
-  RESP=$(kommo_get "${DOMAIN}/api/v4/contacts?limit=${LIMIT}&page=${PAGE}")
-
-  COUNT=$(kommo_collection_count "$RESP" contacts)
-
-  if [[ "$COUNT" == "0" || "$COUNT" == "null" ]]; then
-    break
-  fi
-
-  kommo_collection_json "$RESP" contacts | jq -c '.[] | {
+PAGE=0
+kommo_paginate "${DOMAIN}/api/v4/contacts?limit=250" contacts | while IFS= read -r CONTACTS; do
+  printf '%s\n' "$CONTACTS" | jq -c '.[] | {
     id: .id,
     name: .name,
     created_at: .created_at,
@@ -65,13 +53,10 @@ while true; do
            value: ([.values[]?.value] | if length == 1 then .[0] else . end)}]
       | from_entries)
   }' >> "$TMP_OUTPUT"
-
-  TOTAL=$((TOTAL + COUNT))
-  printf "\rPage %d | %d contatos acumulados" "$PAGE" "$TOTAL"
-
   PAGE=$((PAGE + 1))
-  sleep 0.18  # rate limit: 7 req/s
+  printf "\rPage %d | %d contatos acumulados" "$PAGE" "$(wc -l < "$TMP_OUTPUT" | tr -d ' ')"
 done
+TOTAL=$(wc -l < "$TMP_OUTPUT" | tr -d ' ')
 
 echo ""
 mv "$TMP_OUTPUT" "$OUTPUT"

@@ -5,14 +5,11 @@
 //     same whitelist the Worker uses), so the widget UI can hit integration-only
 //     endpoints like /sources that the admin session can't.
 //
-// Credentials follow the kommo plugin convention (same as resolve_ids.py):
-//   profile: argv[2] or KOMMO_PROFILE, else default_profile (or the only profile)
-//   config (no tokens): $KOMMO_CONFIG, ./.claude/kommo.local.json, ~/.claude/kommo.local.json
-//   domain: KOMMO_DOMAIN_<PERFIL> > profiles.<perfil>.domain > KOMMO_DOMAIN
-//   token:  KOMMO_ACCESS_TOKEN_<PERFIL> > KOMMO_ACCESS_TOKEN   (never from a file)
+// Credentials come from the plugin's resolver, which exports DOMAIN and TOKEN:
+//   source "${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh" && kommo_load_credentials <perfil> \
+//     && node devserver.js
 //   ALLOWED_ORIGIN (optional) pins the one Kommo account allowed to call the proxy.
 //
-// Usage: node devserver.js [perfil]
 // Localhost-only, dev use. Needs dev-key.pem / dev-cert.pem next to this file and
 // the worker/ folder (for allow.json) copied alongside it.
 const https = require('https');
@@ -23,43 +20,20 @@ const path = require('path');
 const ROOT = path.join(__dirname, 'widget');
 const PORT = 9000;
 
-function findConfig() {
-  const explicit = process.env.KOMMO_CONFIG;
-  if (explicit) return fs.existsSync(explicit) ? explicit : null;
-  const cands = [path.join(process.cwd(), '.claude', 'kommo.local.json'),
-                 path.join(os.homedir(), '.claude', 'kommo.local.json')];
-  return cands.find((c) => fs.existsSync(c)) || null;
+if (!process.env.DOMAIN || !process.env.TOKEN) {
+  console.error('DOMAIN/TOKEN not set. Run: source "${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh" && kommo_load_credentials <perfil>');
+  process.exit(2);
 }
-
-function loadCreds(profileArg) {
-  const cfgPath = findConfig();
-  const cfg = cfgPath ? JSON.parse(fs.readFileSync(cfgPath, 'utf8')) : {};
-  const profiles = cfg.profiles || {};
-  let profile = profileArg || process.env.KOMMO_PROFILE || cfg.default_profile;
-  const names = Object.keys(profiles);
-  if (!profile && names.length === 1) profile = names[0];
-  if (!profile && names.length > 1) {
-    console.error('Several profiles in ' + cfgPath + ' and no default_profile: ' + names.join(', ') + '. Pass one: node devserver.js <perfil>');
-    process.exit(2);
-  }
-  const key = profile ? profile.toUpperCase().replace(/-/g, '_') : '';
-  const domain = (key && process.env['KOMMO_DOMAIN_' + key]) ||
-                 (profile && profiles[profile] && profiles[profile].domain) ||
-                 process.env.KOMMO_DOMAIN;
-  const token = (key && process.env['KOMMO_ACCESS_TOKEN_' + key]) || process.env.KOMMO_ACCESS_TOKEN;
-  if (!domain) { console.error('No Kommo domain for profile "' + profile + '". Run /kommo:setup or set KOMMO_DOMAIN_<PERFIL>.'); process.exit(2); }
-  if (!token) { console.error('No token. Set KOMMO_ACCESS_TOKEN_' + (key || '<PERFIL>') + ' (or KOMMO_ACCESS_TOKEN).'); process.exit(2); }
-  return { profile: profile || 'default', domain: domain, token: token };
-}
-
-const CREDS = loadCreds(process.argv[2]);
-const KOMMO_HOST = CREDS.domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
-const TOKEN = CREDS.token;
+const KOMMO_HOST = process.env.DOMAIN.replace(/^https?:\/\//, '').replace(/\/$/, '');
+const TOKEN = process.env.TOKEN;
 const KOMMO_ORIGIN = /^https:\/\/[a-z0-9-]+\.kommo\.com$/;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '';
-const ALLOW = require('./worker/src/allow.json').map(function (a) {
+const ALLOW_RAW = require('./worker/src/allow.json');
+const ALLOW = ALLOW_RAW.map(function (a) {
   return { method: a.method, re: new RegExp(a.path) };
 });
+const ALLOW_METHODS = Array.from(new Set(ALLOW_RAW.map(function (a) { return a.method; })))
+  .concat('OPTIONS').join(', ');
 
 function originAllowed(o) {
   return KOMMO_ORIGIN.test(o) && (!ALLOWED_ORIGIN || o === ALLOWED_ORIGIN);
@@ -83,7 +57,7 @@ const opts = {
 function cors(req, res) {
   var o = req.headers.origin || '';
   res.setHeader('Access-Control-Allow-Origin', originAllowed(o) ? o : 'https://' + KOMMO_HOST);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', ALLOW_METHODS);
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With');
 }
 
@@ -128,7 +102,6 @@ https.createServer(opts, function (req, res) {
   var url = decodeURIComponent(req.url.split('?')[0]);
   var qs = req.url.indexOf('?') > -1 ? req.url.slice(req.url.indexOf('?')) : '';
 
-  // API proxy: /k/<kommo v4 path>
   if (url.indexOf('/k/') === 0) {
     if (!originAllowed(req.headers.origin || '')) { res.writeHead(403); return res.end('origin'); }
     var sub = url.slice(3);
@@ -136,7 +109,6 @@ https.createServer(opts, function (req, res) {
     return proxy(req, res, sub + qs);
   }
 
-  // static widget files
   if (url === '/' || url === '') url = '/manifest.json';
   var fp = path.join(ROOT, url);
   if (!fp.startsWith(ROOT)) { res.writeHead(403); return res.end('forbidden'); }
@@ -147,5 +119,5 @@ https.createServer(opts, function (req, res) {
     console.log('200', url);
   });
 }).listen(PORT, function () {
-  console.log('dev server + proxy: https://localhost:' + PORT + ' (profile=' + CREDS.profile + ', kommo=' + KOMMO_HOST + ')');
+  console.log('dev server + proxy: https://localhost:' + PORT + ' (kommo=' + KOMMO_HOST + ')');
 });

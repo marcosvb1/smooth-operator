@@ -18,8 +18,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=kommo_env.sh
-source "$SCRIPT_DIR/kommo_env.sh"
+# shellcheck source=../../../scripts/kommo_env.sh
+source "$SCRIPT_DIR/../../../scripts/kommo_env.sh"
 
 USAGE="Uso: $0 <perfil> <pipeline_id> [baseline.md]"
 PROFILE="${1:-}"
@@ -33,47 +33,30 @@ if [[ ! -f "$MEM_FILE" ]]; then
   exit 2
 fi
 
-# ---- Credenciais
 kommo_load_credentials "$PROFILE" || exit 2
 
-# ---- 1. Estado da API
 if ! API_DATA=$(kommo_get "${DOMAIN}/api/v4/leads/pipelines/$PIPE"); then
   exit 2
 fi
 API_NAME=$(echo "$API_DATA" | jq -r '.name')
-# Stages com `id|name|sort|editable`
 API_TMP=$(mktemp)
+MEM_TMP=$(mktemp)
+trap 'rm -f "$API_TMP" "$MEM_TMP"' EXIT
 if ! kommo_get "${DOMAIN}/api/v4/leads/pipelines/$PIPE/statuses" \
   | jq -r '._embedded.statuses | sort_by(.sort) | .[] | "\(.id)|\(.name)|\(.sort)|\(.is_editable)"' > "$API_TMP"; then
-  rm -f "$API_TMP"
   exit 2
 fi
 API_COUNT=$(grep -c . "$API_TMP" || true)
 
-# ---- 2. Estado do baseline: extrair a última tabela `sort | id | nome`
-# Nome do pipeline: pega primeiro texto entre backticks após "Pipeline:" (aceita "hoje nomeado `X` (era `Y`)")
-MEM_NAME=$(awk '
-  /^\*\*Pipeline:\*\*/ {
-    # Pega o texto entre o primeiro par craseado
-    line=$0
-    while (match(line, /`[^`]+`/)) {
-      print substr(line, RSTART+1, RLENGTH-2)
-      exit
-    }
-  }
-' "$MEM_FILE")
-
-MEM_TMP=$(mktemp)
+MEM_NAME=$(awk -v want=name -f "$SCRIPT_DIR/extract_pipeline_baseline.awk" "$MEM_FILE")
 awk -f "$SCRIPT_DIR/extract_pipeline_baseline.awk" "$MEM_FILE" > "$MEM_TMP"
 MEM_COUNT=$(grep -c "|" "$MEM_TMP" || true)
 
-# ---- 3. Drift
 DRIFT=0
 REPORT="## Kommo drift check — ${PROFILE} / pipeline ${PIPE}\n\n"
 REPORT+="**API:** \`${API_NAME}\` — ${API_COUNT} estágios  \n"
 REPORT+="**Baseline:** \`${MEM_NAME:-?}\` — ${MEM_COUNT} estágios (\`${MEM_FILE}\`)  \n\n"
 
-# 3.1 Nome do pipeline
 if [[ -z "${MEM_NAME:-}" ]]; then
   REPORT+="### ⚠️ Nome do pipeline não parseado do baseline (regex pode estar defasado)\n\n"
   DRIFT=1
@@ -83,10 +66,8 @@ elif [[ "${API_NAME}" != "${MEM_NAME}" ]]; then
   DRIFT=1
 fi
 
-# 3.2 Adições/renomeações (itera API stages)
-# Normaliza nome: stripa " (SYSTEM)" suffix e whitespace; lowercase via tr (bash 3 safe)
 normalize_name() {
-  echo "$1" | sed -E 's/[[:space:]]*\(SYSTEM\)[[:space:]]*$//' | sed -E 's/^[[:space:]]+|[[:space:]]+$//' | tr '[:upper:]' '[:lower:]'
+  echo "$1" | sed -E 's/^[[:space:]]+|[[:space:]]+$//' | tr '[:upper:]' '[:lower:]'
 }
 
 ADDED=""
@@ -108,7 +89,6 @@ while IFS='|' read -r sid sname ssort sedit; do
   fi
 done < "$API_TMP"
 
-# 3.3 Remoções (itera as etapas do baseline)
 REMOVED=""
 while IFS='|' read -r sid sname ssort; do
   [[ -z "$sid" ]] && continue
@@ -122,13 +102,6 @@ done < "$MEM_TMP"
 [[ -n "$REMOVED" ]] && REPORT+="### ➖ Estágios removidos da API (órfãos no baseline)\n${REMOVED}\n"
 [[ -n "$RENAMED" ]] && REPORT+="### ✏️ Estágios renomeados\n${RENAMED}\n"
 
-# 3.4 Contagem
-if [[ "$API_COUNT" -ne "$MEM_COUNT" ]]; then
-  REPORT+="### 📊 Contagem divergente\n"
-  REPORT+="- API tem **${API_COUNT}** estágios, baseline diz **${MEM_COUNT}**\n\n"
-  DRIFT=1
-fi
-
 if [[ $DRIFT -eq 0 ]]; then
   REPORT+="### ✅ Sincronizado"
   REPORT+=" — ${API_COUNT} estágios em ambos, nomes coincidem.\n\n"
@@ -140,7 +113,4 @@ if [[ $DRIFT -eq 1 ]]; then
 fi
 
 echo -e "$REPORT"
-
-# Cleanup
-rm -f "$API_TMP" "$MEM_TMP"
 exit $DRIFT

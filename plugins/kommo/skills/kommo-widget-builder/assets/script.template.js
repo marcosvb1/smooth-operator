@@ -7,7 +7,6 @@ define(['jquery'], function ($) {
     // /api/v4/sources directly ("Only integrations can access this endpoint").
     var API_BASE = 'https://YOUR-WORKER.YOUR-SUBDOMAIN.workers.dev/k';
 
-    // --- API helper (goes through the token proxy) ---
     function api(method, path, body) {
       return $.ajax({
         url: API_BASE + path,

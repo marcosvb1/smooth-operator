@@ -8,7 +8,7 @@ Quem decide copy e fluxo é o chamador; o template só dá a forma do grafo já 
 Estrutura de um template:
 
 - `meta` — `name`, `pattern`, `description`, `channels` e `source_bot` (nome do arquivo-fonte
-  que o `roundtrip_templates.py` procura no corpus; no corpus sintético do `tests/run_all.sh`,
+  que o `tests/roundtrip_templates.py` procura no corpus; no corpus sintético do `tests/run_all.sh`,
   é o próprio template compilado com valores fictícios).
 - `slots` — o que preencher: `name`, `kind`, `required`, `hint` e, nos numéricos, `sentinel`.
 - `lir` — o esqueleto. Slots de texto aparecem como a string `"<<nome>>"`; slots numéricos (IDs,
@@ -18,7 +18,7 @@ Estrutura de um template:
 
 - **copy** (`text`): texto livre (mensagens, nome do bot). Vem do chamador, sempre.
 - **id** (`chat_source`, `status`, `pipeline`, `user`, `custom_field`, `enum`): resolvido na
-  conta-alvo com `resolve_ids.py`. Nunca reusar ID de outra conta.
+  conta-alvo com `resolve_ids.sh`. Nunca reusar ID de outra conta.
 - **delay**: segundos.
 - **raw**: valor inserido como está (ex.: placeholder `{{lead.cf.<FIELD_ID>}}`).
 

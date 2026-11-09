@@ -63,18 +63,23 @@ O config fica fora do plugin e **nunca guarda token**. É procurado em `$KOMMO_C
 - Sem config, peça o subdomínio e sugira `/kommo:setup`. Se faltar o token, diga qual variável
   definir. Se o usuário colar um token na conversa, não grave nem repita.
 
-Os scripts carregam tudo com `scripts/kommo_env.sh`:
+Todo o plugin carrega credenciais e HTTP de `${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh`:
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/skills/kommo-crm/scripts/kommo_env.sh"
+source "${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh"
 kommo_load_credentials <perfil>     # exporta DOMAIN e TOKEN sem imprimir o token
 kommo_get "$DOMAIN/api/v4/account"  # GET com retry em 429
+kommo_paginate "$DOMAIN/api/v4/contacts?limit=250" contacts   # uma página (array JSON) por linha
+kommo_stage_leads "$PIPE" "$STATUS_ID"                         # leads de uma etapa, idem
 kommo_request PATCH "$DOMAIN/api/v4/leads/<ID>" '<json>'   # escrita, sem retry
 ```
 
-Headers: `Authorization: Bearer $TOKEN` e `Content-Type: application/json`. Rate limit 7 req/s:
-em loops, `sleep 0.18`; em 429, esperar 1s e fazer no máximo um retry. Com `curl`, use `-g` em
-URLs com `filter[...][]`.
+### Rate limit
+
+7 req/s. Em laço, `sleep "$KOMMO_RATE_SLEEP"` entre chamadas (o `kommo_paginate` já espera). Em 429,
+o `kommo_get` espera 1s e repete uma vez; `kommo_request` (escrita) nunca repete, porque repetir uma
+escrita pode duplicar o efeito: confira com um GET antes de tentar de novo. Com `curl` à mão, use `-g`
+em URLs com `filter[...][]`.
 
 ## Gates (resumo; regra completa em `references/safety-gates.md`)
 
@@ -166,10 +171,10 @@ trate como snapshot datado: confirme na API antes de afirmar o estado atual.
 - `references/merge-contacts.md` — merge de contatos pela sessão da UI.
 - `references/baseline.template.md` e `references/account-map.template.md` — modelos para o
   projeto do usuário.
-- `scripts/kommo_env.sh` — resolução de credenciais e helpers HTTP.
+- `${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh` — credenciais e helpers HTTP do plugin.
 - `scripts/funnel_snapshot.sh`, `scripts/pipeline_drift.sh`, `scripts/dump_contacts.sh` e
   `scripts/extract_pipeline_baseline.awk`.
-- `scripts/test_scripts.sh` — testes locais sem credenciais nem rede.
+- `${CLAUDE_PLUGIN_ROOT}/tests/test_scripts.sh` — testes locais sem credenciais nem rede.
 
 ## Fora deste escopo
 

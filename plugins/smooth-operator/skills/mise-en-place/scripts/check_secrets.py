@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Scan a map written by the mise-en-place skill for secrets and personal data.
 
-Usage: python3 check_secrets.py [--public] [--include-local] [--no-external] <folder-or-file> [...]
+Usage: python3 check_secrets.py [--public] [--no-external] <folder-or-file> [...]
        python3 check_secrets.py --self-test
 (On Windows, run it with `py` or `python` instead of `python3`.)
 
 --public         also flag real IDs (act_123..., gid://..., numbers with 15+
-                 digits) in files that will live in a public repo.
---include-local  also scan *.local.* files, which by convention hold the real
-                 IDs and stay out of git (skipped by default).
+                 digits) in files that will live in a public repo. *.local.*
+                 files hold the real IDs by convention and stay out of git, so
+                 they are still checked for credentials and personal data,
+                 but not for IDs.
 --no-external    don't run gitleaks or trufflehog even if they are installed.
 
 Exits with code 1 if anything is found. Placeholders such as <TOKEN>, $VAR
@@ -18,6 +19,8 @@ This is a safety net, not a guarantee: people's and companies' names,
 addresses and free text can't be detected by patterns. Review samples by hand.
 """
 
+import contextlib
+import io
 import json
 import math
 import re
@@ -175,7 +178,7 @@ def is_local(f: Path) -> bool:
     return ".local." in f.name or f.name.endswith(".local")
 
 
-def iter_files(paths, include_local=False):
+def iter_files(paths):
     for p in paths:
         path = Path(p)
         if path.is_file():
@@ -183,8 +186,6 @@ def iter_files(paths, include_local=False):
         elif path.is_dir():
             for f in sorted(path.rglob("*")):
                 if not f.is_file() or ".git" in f.parts or "__pycache__" in f.parts:
-                    continue
-                if is_local(f) and not include_local:
                     continue
                 yield f
 
@@ -217,25 +218,34 @@ def redact(text: str) -> str:
 
 
 def run_external(paths):
-    """Run gitleaks and trufflehog when installed; return the number of findings."""
-    found = 0
+    """Run gitleaks and trufflehog when installed. Returns (findings, tools that ran
+    cleanly, tools that failed); a failed tool is reported, never counted as a check."""
+    found, failed = 0, set()
+    tools = [t for t in ("gitleaks", "trufflehog") if shutil.which(t)]
     for p in paths:
-        if shutil.which("gitleaks"):
+        if "gitleaks" in tools:
             r = subprocess.run(
                 ["gitleaks", "detect", "--no-git", "--no-banner", "--redact", "-s", p,
                  "--report-format", "json", "--report-path", "/dev/stdout"],
                 capture_output=True, text=True, timeout=300)
             try:
-                items = json.loads(r.stdout or "[]")
+                items = json.loads(r.stdout or "[]") if r.returncode in (0, 1) else None
             except json.JSONDecodeError:
+                items = None
+            if items is None:
+                failed.add("gitleaks")
+                print(f"gitleaks failed on {p} (exit {r.returncode}): {r.stderr.strip()[:300]}")
                 items = []
             for it in items:
                 found += 1
                 print(f"{it.get('File')}:{it.get('StartLine')}: gitleaks: {it.get('RuleID')}")
-        if shutil.which("trufflehog"):
+        if "trufflehog" in tools:
             r = subprocess.run(
                 ["trufflehog", "filesystem", p, "--json", "--no-update"],
                 capture_output=True, text=True, timeout=300)
+            if r.returncode != 0:
+                failed.add("trufflehog")
+                print(f"trufflehog failed on {p} (exit {r.returncode}): {r.stderr.strip()[:300]}")
             for line in r.stdout.splitlines():
                 try:
                     it = json.loads(line)
@@ -244,7 +254,7 @@ def run_external(paths):
                 meta = it.get("SourceMetadata", {}).get("Data", {}).get("Filesystem", {})
                 found += 1
                 print(f"{meta.get('file')}:{meta.get('line')}: trufflehog: {it.get('DetectorName')}")
-    return found
+    return found, [t for t in tools if t not in failed], sorted(failed)
 
 
 SELF_TEST = [
@@ -309,6 +319,16 @@ def self_test():
         if not text or not any(scan_line(line) for line in text.splitlines()):
             failed += 1
             print("FAILED: UTF-16 file should be decoded and flagged")
+    with tempfile.TemporaryDirectory() as d:
+        Path(d, "data.local.json").write_text('{"ad_account": "act_1234567890"}\n')
+        Path(d, "secrets.local.json").write_text('{"token": "abcdefghijklmnop1234"}\n')
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            main(["--public", "--no-external", d])
+        flagged = out.getvalue()
+        if "data.local.json" in flagged or "secrets.local.json" not in flagged:
+            failed += 1
+            print("FAILED: *.local.* files: IDs allowed, credentials flagged")
     print("self-test ok" if not failed else f"{failed} case(s) failed")
     return 1 if failed else 0
 
@@ -317,7 +337,6 @@ def main(argv):
     if "--self-test" in argv:
         return self_test()
     public = "--public" in argv
-    include_local = "--include-local" in argv
     external = "--no-external" not in argv
     paths = [a for a in argv if not a.startswith("--")]
     if not paths:
@@ -325,7 +344,7 @@ def main(argv):
         return 2
     found = 0
     skipped = []
-    for f in iter_files(paths, include_local):
+    for f in iter_files(paths):
         try:
             text = read_text(f)
         except OSError as exc:
@@ -335,18 +354,21 @@ def main(argv):
             skipped.append(f"{f} (binary)")
             continue
         for n, line in enumerate(text.splitlines(), 1):
-            for label, value in scan_line(line, public):
+            for label, value in scan_line(line, public and not is_local(f)):
                 found += 1
                 print(f"{f}:{n}: {label}: {redact(value)}")
+    tools, tools_failed = [], []
     if external:
-        found += run_external(paths)
+        n, tools, tools_failed = run_external(paths)
+        found += n
     for s in skipped:
         print(f"Skipped, not scanned: {s}")
     if found:
         print(f"\n{found} finding(s). Replace them with a placeholder or an environment variable, "
               "or explain the false positive.")
         return 1
-    tools = [t for t in ("gitleaks", "trufflehog") if external and shutil.which(t)]
+    if tools_failed:
+        print(f"Not checked with {', '.join(tools_failed)} (the tool failed; see above).")
     print("No known secret or personal-data pattern found"
           + (f" (also checked with {', '.join(tools)})" if tools else "")
           + ". Names, addresses and free text can't be detected: review the samples by hand.")

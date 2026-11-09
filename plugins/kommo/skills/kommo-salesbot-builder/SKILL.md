@@ -58,7 +58,7 @@ A saída **sempre** passa pelo `validate.py` antes de ser entregue.
 ## Como "sem erros" é garantido
 
 1. `scripts/validate.py` aceita bots known-good e rejeita malformados (`tests/test_validate.py`).
-2. `scripts/roundtrip.py` prova que o modelo do formato é fiel (parse → regenera → diff semântico).
+2. `tests/roundtrip.py` prova que o modelo do formato é fiel (parse → regenera → diff semântico).
 3. 1 import manual confirma o aceite na conta real.
 
 Nunca entregue um bot que não passou no `validate.py`.
@@ -77,12 +77,11 @@ Wrapper: `{"type_functionality": N, "model": {"text": "<JSON string>", "name": "
 
 ## Conta, credenciais e IDs
 
-Mesma convenção do plugin (veja a skill `kommo-crm`): perfil no config `kommo.local.json`
-(`$KOMMO_CONFIG`, `./.claude/` ou `~/.claude/`), token só em `KOMMO_ACCESS_TOKEN_<PERFIL>` ou
-`KOMMO_ACCESS_TOKEN`. O perfil-alvo é **explícito**: se o usuário não disse para qual conta, pergunte.
+Credenciais pelo resolvedor do plugin (`${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh`; regras em
+"Conta e credenciais" da skill `kommo-crm`). O perfil-alvo é **explícito**: se o usuário não disse para qual conta, pergunte.
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kommo-salesbot-builder/scripts/resolve_ids.py" <perfil> \
+"${CLAUDE_PLUGIN_ROOT}/skills/kommo-salesbot-builder/scripts/resolve_ids.sh" <perfil> \
   --out /tmp/inv.<perfil>.json --scan-bots <pasta-de-exports-da-conta-alvo>
 ```
 
@@ -102,7 +101,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/kommo-salesbot-builder/scripts/resolve_ids
 
 1. Receber o export (modo adaptar) ou a escolha de template + copy (modo compilar), e o
    perfil-alvo. Se faltar algum, peça: o motor não inventa fluxo nem conta.
-2. Resolver IDs ao vivo → inventário (`resolve_ids.py`).
+2. Resolver IDs ao vivo → inventário (`resolve_ids.sh`).
 3. Modo adaptar: `salesbot_model.parse_to_ir` no export e remapear os IDs do IR para os
    resolvidos + `chat_source` **confirmado**; depois `salesbot_model.ir_to_export`.
    Modo compilar: preencher os slots do template (`templates/README.md`) com a copy e os IDs
@@ -147,14 +146,17 @@ importado, age sobre leads reais. Por isso:
 | `references/format.md` | Formato de export completo, handlers, invariantes e divergências da doc |
 | `references/ir.md` | Schema do IR (forma editável do export) e a fase 2 adiada |
 | `references/api-and-runtime.md` | API de bots, `chat_source`, templates de WhatsApp, `widget_request` |
-| `scripts/resolve_ids.py` | Inventário de IDs ao vivo por perfil (+ scan de `chat_sources` em exports) |
+| `scripts/resolve_ids.sh` | Inventário de IDs ao vivo por perfil (+ scan de `chat_sources` em exports) |
 | `scripts/validate.py` | Valida um export contra os invariantes + inventário |
-| `scripts/roundtrip.py` | export → IR → export com diff semântico |
-| `scripts/roundtrip_templates.py` | Prova que cada template regenera o bot-fonte |
 | `scripts/compile.py` | Template + valores → JSON de export validado |
 | `scripts/salesbot_model.py` | Parse/serialize do formato (IR) |
 | `templates/` | Esqueletos de IR sem copy + README |
 | `tests/run_all.sh` | Roda todas as provas offline (corpus sintético ou `$SALESBOT_CORPUS`) |
+| `tests/roundtrip.py` | Prova: export → IR → export com diff semântico |
+| `tests/roundtrip_templates.py` | Prova: cada template regenera o bot-fonte |
+| `tests/test_validate.py` | Prova: o validador aceita o corpus e pega cada mutação malformada |
+| `tests/make_fixture_corpus.py` | Monta o corpus sintético a partir dos templates |
+| `tests/proof.py` | Caminhos e utilidades compartilhadas pelas provas |
 | `viz/salesbot-viewer.html` | Visualizador read-only de um export, abre no navegador sem dependências |
 
 ## Corpus de prova

@@ -76,7 +76,7 @@ Se um filtro retorna número que parece "alto demais" ou "estranho demais" pra u
 
 ## Outros pitfalls operacionais
 
-- **Rate limit 7 req/s** — em loops, sleep 0.18s entre requests. 429 = sleep 1s e retry.
+- **Rate limit 7 req/s** — política de espera e retry na seção "Rate limit" do `SKILL.md`.
 - **Limite 40 fields/POST** — pra criar muitos custom fields, dividir em batches de 40.
 - **DELETE de custom field apaga dados** — irreversível. Sempre confirmar com o operador humano antes.
 - **DELETE de funil/etapa** — confirmar antes; afeta leads associados.

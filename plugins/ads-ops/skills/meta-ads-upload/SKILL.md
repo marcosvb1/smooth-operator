@@ -74,13 +74,13 @@ O que mais quebra em silêncio:
 - **Unidades:** `daily_budget`, `daily_min_spend_target` e `bid_amount` são na **menor unidade da moeda** da conta (centavos para BRL e USD; moedas sem decimal, como JPY, vão pelo valor de face). O piso de gasto só é validado na ativação e a Meta limita a razão piso/orçamento: confira o piso como % do orçamento da mãe. Piso percentual (`min_budget_spend_percentage`) só grava pela interface.
 - **Boost de post existente:** para saber se a publicação já foi anunciada, compare `source_instagram_media_id`. O ID `effective` ads-only é uma cópia e não prova repostagem.
 - 🔴 **Menores de idade:** a Meta restringe muito a segmentação de 13-17 anos (sem interesses, objetivo e placements limitados, geo fina pode não sobreviver). Confira as regras atuais antes de montar, e não misture menor e maior no mesmo ad set: isso se decide no briefing, não na correção. Categorias especiais (crédito, emprego, moradia, temas sociais) também restringem segmentação.
-- **Creative é imutável.** Trocar arte ou texto é sempre creative novo. O ad pode ser reapontado para ele (`POST /{ad_id}` com `creative`, que é o que o modo `update` do runner faz), mas isso reinicia revisão e aprendizado; para preservar o histórico do ad antigo, crie ad novo e pause o antigo.
+- **Creative é imutável.** Trocar arte ou texto é sempre creative novo. O ad pode ser reapontado para ele (`POST /{ad_id}` com `creative`, que é o que o job `update_ads` do runner faz), mas isso reinicia revisão e aprendizado; para preservar o histórico do ad antigo, crie ad novo e pause o antigo.
 - **Nomenclatura:** siga a convenção da conta (audite os nomes existentes) ou a da referência local. Sem nenhuma das duas, pergunte.
 
 ## 3. Preflight, antes de mostrar o plano
 
 - **Abra cada arte e olhe.** "Entregue" não é "finalizada": cace placeholder de vídeo, caixa branca, lorem, texto cortado e proporção errada.
-- **Audite a numeração existente** (`ads_get_ad_entities` no nível de ad set, ou `--mode audit` no runner) antes de criar ad set novo, senão nasce um `03` duplicado.
+- **Audite a numeração existente** (`ads_get_ad_entities` no nível de ad set, ou o job `audit` do runner) antes de criar ad set novo, senão nasce um `03` duplicado.
 - **Resolva todo ID.** Nenhum placeholder sobrevive ao plano.
 - **Declare os readbacks:** o que será relido depois de cada escrita e qual valor prova que deu certo.
 
@@ -116,7 +116,7 @@ Tudo fica em `${CLAUDE_PLUGIN_ROOT}/skills/meta-ads-upload/`: `scripts/run_meta_
 
 ### Segurança do runner
 
-- Sempre começar em dry-run (default). No dry-run as leituras (GET) rodam de verdade, então `audit` e a numeração automática usam dados reais; as escritas não são enviadas e aparecem em `planned_calls` no relatório, com método, caminho e parâmetros. O `planned_calls` é o plano a mostrar ao usuário, com uma lacuna: uploads de mídia não aparecem nele (no dry-run eles devolvem IDs fictícios), então liste os arquivos a subir à parte.
+- Sempre começar em dry-run (default). No dry-run as leituras (GET) rodam de verdade, então `audit` e a numeração automática usam dados reais; as escritas não são enviadas e aparecem em `planned_calls` no relatório, com método, caminho e parâmetros. O `planned_calls` é o plano a mostrar ao usuário, uploads de mídia incluídos (no dry-run eles devolvem IDs fictícios; imagens por URL são baixadas para conferir o arquivo).
 - `--execute` só com o payload revisado e o OK do usuário.
 - Nunca gravar token em config, template ou JSON de input.
 - O runner só repete GET sozinho. Se um POST falhar por rede ou 5xx, releia (por nome ou `created_time`) antes de reenviar, porque ele pode ter gravado.
@@ -128,10 +128,12 @@ O runner resolve a conta nesta ordem (o primeiro que tiver o valor ganha):
 
 1. `context` dentro do JSON do job (`ad_account`, `page_id`, `ig_user_id`, `api_version`), só quando o usuário pedir outra conta para aquele job
 2. O perfil escolhido com `--profile <nome>` (ou o `default_profile`) no config do ads-ops
-3. Variáveis `META_AD_ACCOUNT_<PERFIL>`, `META_PAGE_ID_<PERFIL>`, `META_IG_USER_ID_<PERFIL>`
-4. Variáveis genéricas `META_AD_ACCOUNT`, `META_PAGE_ID`, `META_IG_USER_ID`, `META_API_VERSION` (default `v25.0`)
+3. Variáveis `META_AD_ACCOUNT_<PERFIL>`, `META_PAGE_ID_<PERFIL>`, `META_IG_USER_ID_<PERFIL>`, `META_API_VERSION_<PERFIL>`
+4. Variáveis genéricas `META_AD_ACCOUNT`, `META_PAGE_ID`, `META_IG_USER_ID`, `META_API_VERSION` (sem nenhuma, vale a versão padrão do runner)
 
-O token vem só de variável de ambiente: `META_ACCESS_TOKEN_<PERFIL>` ou `META_ACCESS_TOKEN`. `<PERFIL>` é o nome do perfil em maiúsculas, com `-` trocado por `_` (perfil `cliente-a` → `META_ACCESS_TOKEN_CLIENTE_A`).
+Um `--profile` que não está no config nem tem `META_ACCESS_TOKEN_<PERFIL>` ou `META_AD_ACCOUNT_<PERFIL>` é erro, para não cair nas variáveis genéricas de outra conta.
+
+O token vem só de variável de ambiente: `META_ACCESS_TOKEN_<PERFIL>` ou `META_ACCESS_TOKEN`. `<PERFIL>` é o nome do perfil em maiúsculas, com todo caractere que não é letra nem número trocado por `_` (perfil `cliente-a` → `META_ACCESS_TOKEN_CLIENTE_A`).
 
 O config é procurado em `$ADS_OPS_CONFIG`, depois `./.claude/ads-ops.local.json` e por fim `~/.claude/ads-ops.local.json`. Ele é opcional; para cadastrar contas, sugira `/ads-ops:setup`. Formato da seção Meta:
 
@@ -154,29 +156,31 @@ Se faltar conta, página ou token, o runner para dizendo o que configurar. Pergu
 RUN="python3 ${CLAUDE_PLUGIN_ROOT}/skills/meta-ads-upload/scripts/run_meta_job.py"
 ```
 
-| Tarefa | Comando |
+Cada template em `templates/` tem o nome do seu `job_type`, e é o `job_type` do arquivo que escolhe o job: `$RUN --input <arquivo>.json`.
+
+| Tarefa | Template |
 |---|---|
-| Auditar campanha | `$RUN --mode audit --input audit.json` |
-| Criar adsets | `$RUN --mode create --input adsets.json` |
-| Criar ads de vídeo | `$RUN --mode create --input video_ads.json` |
-| Criar ads de imagem | `$RUN --mode create --input image_ads.json` |
-| Criar ads de posts existentes do Instagram | `$RUN --mode create --input existing_post_ads.json` |
-| Atualizar ads com novo creative | `$RUN --mode update --input update_ads.json` |
-| Duplicar campanhas, adsets ou ads | `$RUN --mode duplicate --input duplicate_adsets.json` |
+| Auditar campanha | `audit` |
+| Criar adsets | `adsets` |
+| Criar ads de vídeo | `video_ads` |
+| Criar ads de imagem | `image_ads` |
+| Criar ads de posts existentes do Instagram | `existing_post_ads` |
+| Atualizar ads com novo creative | `update_ads` |
+| Duplicar campanhas, adsets ou ads | `duplicate_campaigns`, `duplicate_adsets`, `duplicate_ads` |
 
 Fluxo: `audit` → copiar o template certo para o diretório de trabalho e preencher os `<PLACEHOLDERS>` → dry-run → revisar e mostrar `planned_calls` → `--execute` com o OK. Acrescente `--profile <nome>` para escolher a conta e `--output <arquivo>` para mudar onde o relatório é gravado.
 
-O runner recusa inputs com `<PLACEHOLDERS>` não preenchidos e inputs com `access_token`. O relatório traz `status: "ok"` (saída 0), `"partial"` quando algum item falhou (saída 2; veja `result.error` e o `error` de cada item) ou `"error"` (saída 1). Nunca diga que deu certo sem conferir isso e sem o readback.
+O runner recusa inputs com `<PLACEHOLDERS>` não preenchidos e inputs com `access_token`, e todo erro também vai para o relatório. O relatório traz `status: "ok"` (saída 0), `"partial"` quando algum item falhou (saída 2; veja `result.error` e o `error` de cada item) ou `"error"` (saída 1). Nunca diga que deu certo sem conferir isso e sem o readback.
 
-### Modos
+### Jobs
 
 - `audit`: validar naming e estado da campanha
-- `create` + `job_type=adsets`: criar ad sets com numeração (`auto_number` + `name_template`, ex. `{num:02d} - Publico`). A numeração lê o número no início do nome dos existentes (`01 - ...`); se a conta usa outro padrão, confirme antes.
-- `create` + `job_type=video_ads` | `image_ads` | `existing_post_ads`: subir mídia, creative e ad
-- `update`: criar creative com asset customization e apontar o ad existente para ele
-- `duplicate` + `job_type=campaigns` | `adsets` | `ads`: clonar pelo `/copies`
+- `adsets`: criar ad sets com numeração (`auto_number` + `name_template`, ex. `{num:02d} - Publico`). A numeração lê o número no início do nome dos existentes (`01 - ...`); se a conta usa outro padrão, confirme antes.
+- `video_ads` | `image_ads` | `existing_post_ads`: subir mídia, creative e ad
+- `update_ads`: criar creative com asset customization e apontar o ad existente para ele
+- `duplicate_campaigns` | `duplicate_adsets` | `duplicate_ads`: clonar pelo `/copies`
 
-Em `duplicate`, o input segue o padrão `items[]` com um `id` por objeto; campos no root valem para todos e campos no item sobrescrevem:
+Em todo input com `items[]`, um campo na raiz vale para todos os itens e o mesmo campo no item sobrescreve (`null` conta como ausente). Nos `duplicate_*`, cada item traz o `id` do objeto a clonar, e estes campos se aplicam:
 
 | Campo | Descrição |
 |-------|-----------|

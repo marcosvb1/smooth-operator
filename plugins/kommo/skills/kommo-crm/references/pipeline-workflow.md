@@ -4,11 +4,10 @@ Os 6 passos canônicos. Cada um com comando exato e validação esperada.
 
 ## Setup inicial
 
-Carregar o helper compartilhado da skill:
+Carregar o helper compartilhado do plugin:
 
 ```bash
-SCRIPT_DIR="${CLAUDE_PLUGIN_ROOT}/skills/kommo-crm/scripts"
-source "$SCRIPT_DIR/kommo_env.sh"
+source "${CLAUDE_PLUGIN_ROOT}/scripts/kommo_env.sh"
 kommo_load_credentials <perfil>   # perfil do kommo.local.json
 API="${DOMAIN}/api/v4"
 PIPE=<pipeline_id>
@@ -37,24 +36,15 @@ Em seguida, contar leads por etapa (pagination até esgotar — `_total_items` �
 
 ```bash
 count_leads() {
-  local SID=$1; local PAGE=1; local TOTAL=0
-  while true; do
-    URL="$API/leads?filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=${PIPE}&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=${SID}&limit=250&page=${PAGE}"
-    RESP=$(kommo_get "$URL")
-    C=$(echo "$RESP" | jq -r '._embedded.leads | length // 0')
-    if [[ "$C" == "0" || "$C" == "null" ]]; then break; fi
-    TOTAL=$((TOTAL + C))
-    if [[ -z "$(echo "$RESP" | jq -r '._links.next.href // empty')" ]]; then break; fi
-    PAGE=$((PAGE + 1)); sleep 0.18
-  done
-  echo "$TOTAL"
+  kommo_stage_leads "$PIPE" "$1" \
+    | jq -s 'map(length) | add // 0'
 }
 
 for SID in $(jq -r '._embedded.statuses[].id' /tmp/pipe_snapshot.json); do
   NAME=$(jq -r --argjson s "$SID" '._embedded.statuses[] | select(.id==$s) | .name' /tmp/pipe_snapshot.json)
   N=$(count_leads "$SID")
   printf "  %-30s %s leads\n" "$NAME" "$N"
-  sleep 0.18
+  sleep "$KOMMO_RATE_SLEEP"
 done
 ```
 
@@ -102,7 +92,7 @@ Regras inegociáveis nessa hora (cf. `pipeline-api-quirks.md`):
 
 5. **`descriptions` array de objetos** `{id, level, description}`. Se UPDATE de descrição existente, passar o `id` (pegar do snapshot `?with=descriptions`). Se CREATE, sem id.
 
-6. **1 PATCH por etapa** — não existe batch PATCH em statuses (retorna 405). Sleep 0.18 entre PATCHs (rate limit 7 req/s).
+6. **1 PATCH por etapa** — não existe batch PATCH em statuses (retorna 405). `sleep "$KOMMO_RATE_SLEEP"` entre PATCHs.
 
 Template do PATCH:
 
@@ -140,16 +130,8 @@ Quando todos os leads da etapa órfã têm semântica clara pra ir pra mesma eta
 ```bash
 # Paginar toda a etapa origem para JSONL antes de escrever
 LEADS_TMP=$(mktemp)
-PAGE=1
-while true; do
-  URL="${DOMAIN}/api/v4/leads?filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=${PIPE}&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=${FROM}&limit=250&page=${PAGE}"
-  RESP=$(kommo_get "$URL")
-  N=$(echo "$RESP" | jq '._embedded.leads // [] | length')
-  [[ "$N" -eq 0 ]] && break
-  echo "$RESP" | jq -c '._embedded.leads[]' >> "$LEADS_TMP"
-  [[ -z "$(echo "$RESP" | jq -r '._links.next.href // empty')" ]] && break
-  PAGE=$((PAGE + 1)); sleep 0.18
-done
+kommo_stage_leads "$PIPE" "$FROM" \
+  | jq -c '.[]' > "$LEADS_TMP"
 
 # PATCH em lotes de até 250, com readback da resposta antes do próximo lote
 TOTAL=$(wc -l < "$LEADS_TMP" | tr -d ' ')
@@ -166,7 +148,7 @@ while [[ "$OFFSET" -lt "$TOTAL" ]]; do
   READBACK=$(kommo_get "$API/leads?${FILTER}&limit=250")
   echo "$READBACK" | jq -e --argjson expected "$EXPECTED_IDS" --argjson to "$TO" --argjson pipe "$PIPE" \
     '([._embedded.leads[].id] | sort) == $expected and all(._embedded.leads[]; .status_id == $to and .pipeline_id == $pipe)' >/dev/null
-  OFFSET=$((OFFSET + 250)); sleep 0.18
+  OFFSET=$((OFFSET + 250)); sleep "$KOMMO_RATE_SLEEP"
 done
 ```
 

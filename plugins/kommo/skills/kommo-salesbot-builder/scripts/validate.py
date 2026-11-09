@@ -19,8 +19,12 @@ Usage:
 """
 import argparse
 import json
+import os
 import re
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from salesbot_model import LANES, iter_handlers, text_steps as split_steps  # noqa: E402
 
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 MAX_BOT_BYTES = 64 * 1024
@@ -34,7 +38,7 @@ KNOWN_HANDLERS = {
     "stop", "preset", "find", "filter", "meta", "validations", "send_external_message",
     "widget_request", "exits",
 }
-GOTO_TYPES = {"question", "answer", "finish"}
+GOTO_TYPES = set(LANES)
 
 
 class Findings:
@@ -85,22 +89,9 @@ def _check_send_message(f, params, where, sid):
     # in isolation is exactly the mistake that produced the wrong verdict on 2026-09-02.
 
 
-def iter_handlers(node):
-    """Yield every {handler, params} dict found anywhere under node (recursively)."""
-    if isinstance(node, dict):
-        if "handler" in node and isinstance(node.get("handler"), str):
-            yield node
-        for v in node.values():
-            yield from iter_handlers(v)
-    elif isinstance(node, list):
-        for v in node:
-            yield from iter_handlers(v)
-
-
 def validate(wrapper, inventory=None):
     f = Findings()
 
-    # ---- wrapper shape ----
     if not isinstance(wrapper, dict):
         f.err("WRAPPER", "Top-level must be an object {type_functionality, model}", "$")
         return f
@@ -124,12 +115,12 @@ def validate(wrapper, inventory=None):
     # text/positions are STRINGIFIED json
     try:
         text = json.loads(model["text"])
-    except Exception as e:  # noqa: BLE001
+    except json.JSONDecodeError as e:
         f.err("TEXT_PARSE", f"model.text is not valid JSON string: {e}", "$.model.text")
         return f
     try:
         positions = json.loads(model["positions"])
-    except Exception as e:  # noqa: BLE001
+    except json.JSONDecodeError as e:
         f.err("POS_PARSE", f"model.positions is not valid JSON string: {e}", "$.model.positions")
         return f
     if not isinstance(text, dict):
@@ -139,13 +130,11 @@ def validate(wrapper, inventory=None):
         f.err("POS_TYPE", "model.positions must decode to an array of blocks", "$.model.positions")
         return f
 
-    # ---- size limit ----
     tlen = len(model["text"].encode("utf-8"))
     if tlen > MAX_BOT_BYTES:
         f.err("SIZE", f"model.text is {tlen} bytes (> 64KB limit)", "$.model.text")
 
-    # ---- text steps ----
-    text_steps = {k: v for k, v in text.items() if k != "conversation"}
+    text_steps = split_steps(text)
     if "conversation" not in text:
         f.warn("TEXT_CONV", "model.text missing top-level 'conversation' boolean (corpus has it)", "$.model.text")
     text_step_ids = set()
@@ -157,7 +146,7 @@ def validate(wrapper, inventory=None):
         if not isinstance(step, dict):
             f.err("STEP_SHAPE", f"step {sid} must be an object", f"text.{sid}")
             continue
-        blocks = [b for b in ("question", "answer", "finish") if b in step]
+        blocks = [b for b in LANES if b in step]
         if not blocks:
             f.err("STEP_BLOCKS", f"step {sid} has no question/answer/finish array", f"text.{sid}")
         bu = step.get("block_uuid")
@@ -182,7 +171,6 @@ def validate(wrapper, inventory=None):
                 if hn == "send_message":
                     _check_send_message(f, h.get("params"), f"text.{sid}.{b}[{i}]", sid)
 
-    # ---- positions blocks ----
     pos_by_id = {}
     pos_steps = set()
     pos_block_uuid = {}  # step -> uuid
@@ -209,17 +197,14 @@ def validate(wrapper, inventory=None):
         if "actions" in blk and not isinstance(blk["actions"], list):
             f.err("POS_ACT", f"positions[{j}].actions must be an array", f"positions[{j}]")
 
-    # ---- CONSISTENCY: the heart ----
-    # 1. every text step appears as a positions block step
     for sid in text_step_ids:
         if sid not in pos_steps:
             f.err("SYNC_TEXT_POS", f"text step {sid} has no matching positions block (step {sid})", f"text.{sid}")
-    # 2. block_uuid agreement where both present
     for sid, bu in text_block_uuid.items():
         pbu = pos_block_uuid.get(sid)
         if pbu and bu and pbu != bu:
             f.err("SYNC_UUID", f"block_uuid mismatch for step {sid}: text={bu} positions={pbu}", f"text.{sid}")
-    # 3. every text BRANCH target resolves. Branch edges live in several handler shapes:
+    # Every text BRANCH target resolves. Branch edges live in several handler shapes:
     #    goto {step,type}; waits.conditions[].action {step,type}; distribution.variants[] {step,type};
     #    conditions.params.result[] gotos (caught by recursion). Bare {step} targets (waits/distribution)
     #    are NOT handler:goto, so a naive goto-only scan misses them (false negative).
@@ -272,7 +257,6 @@ def validate(wrapper, inventory=None):
             if typ is not None and typ not in GOTO_TYPES:
                 f.warn("GOTO_TYPE", f"target type '{typ}' unexpected (step {sid})", f"text.{sid}")
 
-    # 4. positions edges resolve: block-level goto.block AND every action's links[].block
     for j, blk in enumerate(positions):
         if not isinstance(blk, dict):
             continue
@@ -286,12 +270,10 @@ def validate(wrapper, inventory=None):
                     if isinstance(lk, dict) and lk.get("block") is not None and lk["block"] not in pos_by_id:
                         f.err("POS_LINK_DANGLE", f"positions[{j}] (id {blk.get('id')}) action links.block {lk['block']} has no such block", f"positions[{j}]")
 
-    # 4b. exactly one start block (INV-ONE-START)
     n_start = sum(1 for b in positions if isinstance(b, dict) and b.get("type") == "start")
     if n_start != 1:
         f.err("ONE_START", f"expected exactly 1 start block in positions, found {n_start}")
 
-    # 4c. orphan positions block: a non-start/static/finish block whose step has no text entry
     for j, blk in enumerate(positions):
         if not isinstance(blk, dict):
             continue
@@ -299,7 +281,6 @@ def validate(wrapper, inventory=None):
         if st is not None and str(st) not in text_step_ids and blk.get("type") not in ("start", "static", "finish"):
             f.warn("POS_ORPHAN", f"positions[{j}] (id {blk.get('id')}, type {blk.get('type')}) step {st} has no text entry", f"positions[{j}]")
 
-    # 4d. block_uuid uniqueness across text steps
     seen_uuid = {}
     for sid, bu in text_block_uuid.items():
         if bu in seen_uuid:
@@ -307,7 +288,6 @@ def validate(wrapper, inventory=None):
         else:
             seen_uuid[bu] = sid
 
-    # 4e. handler-shape structural checks (run without inventory)
     for h in iter_handlers(text):
         hn = h.get("handler")
         p = h.get("params", {})
@@ -328,7 +308,6 @@ def validate(wrapper, inventory=None):
             if p["params"].get("pipeline_id") is None:
                 f.err("PIPELINE_REQUIRED", "change_status requires a pipeline_id (absent) — status alone is ambiguous")
 
-    # 5. button limits
     for h in iter_handlers(text):
         p = h.get("params", {})
         if isinstance(p, dict):
@@ -341,7 +320,6 @@ def validate(wrapper, inventory=None):
                     if isinstance(txt, str) and len(txt) > MAX_BUTTON_LEN:
                         f.warn("BUTTON_LEN", f"button text >{MAX_BUTTON_LEN} chars may truncate on Messenger: '{txt[:30]}...'")
 
-    # ---- INVENTORY pass ----
     if inventory is not None:
         _inventory_pass(f, text, positions, inventory)
 
@@ -362,14 +340,12 @@ def _inventory_pass(f, text, positions, inv):
     # Only an explicit human-curated 'confirmed' list counts. The 'from_existing_bots'
     # scan is reference-only (may contain ids from FOREIGN accounts) and never confirms.
     confirmed_cs = set(cs.get("confirmed", []))
-    bots = set(inv.get("bots", []) or [])  # optional: bot-chaining ids (resolve_ids may not populate)
 
     for h in iter_handlers(text):
         hn = h.get("handler")
         p = h.get("params", {})
         if not isinstance(p, dict):
             continue
-        # change_status -> pipeline + status (status must belong to the pipeline)
         if hn == "action" and p.get("name") == "change_status":
             ap = p.get("params", {})
             sid_ = ap.get("value")
@@ -395,7 +371,6 @@ def _inventory_pass(f, text, positions, inv):
                     if m:
                         cf = all_cf.get(int(m.group(1)))
             val = ap.get("value")
-            # bare digit-string value targeting a select-typed CF must be a known enum id
             if isinstance(val, str) and val.isdigit() and cf and cf.get("type") in select_types:
                 if int(val) not in {e["id"] for e in cf.get("enums", [])}:
                     f.err("INV_ENUM", f"set_custom_fields value {val} is not an enum id of CF {cf.get('id')} ({cf.get('name')})")
@@ -412,11 +387,6 @@ def _inventory_pass(f, text, positions, inv):
             ru = (tr.get("settings") or {}).get("responsible_user")
             if ru not in ("current", None) and str(ru).isdigit() and int(ru) not in user_ids:
                 f.err("INV_USER", f"trigger responsible_user {ru} not a user in this account")
-        if hn == "start":
-            bid = p.get("bot")
-            if isinstance(bid, int) and bots and bid not in bots:
-                f.err("INV_BOT", f"start.bot {bid} not a bot in this account")
-        # chat_sources
         srcs = p.get("chat_sources")
         if isinstance(srcs, list):
             for s in srcs:
@@ -451,10 +421,18 @@ def _inventory_pass(f, text, positions, inv):
             f.err("INV_ENUM_PH", f"placeholder references enum id {eid} not in this account")
 
 
+def print_report(f, name):
+    for it in f.items:
+        mark = "✗" if it["severity"] == "ERROR" else "⚠"
+        print(f"  {mark} [{it['code']}] {it['message']}" + (f"  ({it['where']})" if it["where"] else ""))
+    status = "PASS" if f.n_err == 0 else "FAIL"
+    print(f"{status}: {f.n_err} error(s), {f.n_warn} warning(s) — {name}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("bot", help="path to a salesbot export json")
-    ap.add_argument("--inventory", help="account inventory json from resolve_ids.py (enables ID checks)")
+    ap.add_argument("--inventory", help="account inventory json from resolve_ids.sh (enables ID checks)")
     ap.add_argument("--json", action="store_true", help="emit findings as JSON")
     ap.add_argument("--strict", action="store_true", help="exit nonzero on WARN too")
     args = ap.parse_args()
@@ -471,11 +449,7 @@ def main():
     if args.json:
         print(json.dumps({"errors": f.n_err, "warnings": f.n_warn, "findings": f.items}, ensure_ascii=False, indent=2))
     else:
-        for it in f.items:
-            mark = "✗" if it["severity"] == "ERROR" else "⚠"
-            print(f"  {mark} [{it['code']}] {it['message']}" + (f"  ({it['where']})" if it["where"] else ""))
-        status = "PASS" if f.n_err == 0 else "FAIL"
-        print(f"{status}: {f.n_err} error(s), {f.n_warn} warning(s) — {args.bot.split('/')[-1]}")
+        print_report(f, os.path.basename(args.bot))
 
     rc = 1 if f.n_err or (args.strict and f.n_warn) else 0
     sys.exit(rc)

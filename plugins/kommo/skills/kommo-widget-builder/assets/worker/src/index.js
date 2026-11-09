@@ -8,12 +8,12 @@
 //   - CORS + Origin must be exactly https://<sub>.kommo.com (regex, not substring).
 //   - No shared secret: anything in the widget JS is public. Optional
 //     ALLOWED_ORIGIN var pins the one account that may use this Worker.
-//   - Path whitelist: only `sources` (GET/POST/DELETE) and `leads/pipelines` (GET).
-//     Even if the URL leaks, no access to leads/contacts/etc.
+//   - Path whitelist in allow.json: even if the URL leaks, no access to leads/contacts/etc.
 
 // Route whitelist shared with ../../devserver.js (edit allow.json, not here).
 import ALLOW_RAW from './allow.json';
 const ALLOW = ALLOW_RAW.map((a) => ({ method: a.method, re: new RegExp(a.path) }));
+const ALLOW_METHODS = [...new Set(ALLOW_RAW.map((a) => a.method)), 'OPTIONS'].join(', ');
 
 const KOMMO_ORIGIN = /^https:\/\/[a-z0-9-]+\.kommo\.com$/;
 
@@ -26,7 +26,7 @@ function corsHeaders(origin, env) {
   const allow = originAllowed(origin, env) ? origin : `https://${env.KOMMO_DOMAIN}`;
   return {
     'Access-Control-Allow-Origin': allow,
-    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': ALLOW_METHODS,
     'Access-Control-Allow-Headers': 'Content-Type, X-Requested-With',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin',
@@ -48,10 +48,9 @@ export default {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/k/')) return json({ error: 'not found' }, 404);
 
-    // auth
     if (!originAllowed(origin, env)) return json({ error: 'forbidden origin' }, 403);
 
-    const sub = url.pathname.slice(3); // after "/k/"
+    const sub = url.pathname.slice("/k/".length);
     const allowed = ALLOW.some((a) => a.method === request.method && a.re.test(sub));
     if (!allowed) return json({ error: 'endpoint not allowed', path: sub, method: request.method }, 403);
 
@@ -63,7 +62,7 @@ export default {
         'Content-Type': 'application/json',
       },
     };
-    if (request.method === 'POST' || request.method === 'DELETE') {
+    if (request.method !== 'GET') {
       init.body = await request.text();
     }
 

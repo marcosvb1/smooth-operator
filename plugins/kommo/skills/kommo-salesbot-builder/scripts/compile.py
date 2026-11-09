@@ -28,14 +28,11 @@ import argparse
 import copy
 import json
 import os
-import subprocess
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from salesbot_model import ir_to_export, save_export  # noqa: E402
-
-VALIDATE = os.path.join(HERE, "validate.py")
+from validate import print_report, validate  # noqa: E402
 
 
 def _subst(node, str_subs, num_subs):
@@ -48,7 +45,7 @@ def _subst(node, str_subs, num_subs):
         out = node
         for token, val in str_subs.items():
             if out == token:
-                return val  # whole-value replacement preserves non-string targets if val isn't str
+                return val
             if token in out:
                 out = out.replace(token, str(val))
         return out
@@ -62,7 +59,6 @@ def _subst(node, str_subs, num_subs):
 
 def compile_template(template, values):
     slots = {s["name"]: s for s in template.get("slots", [])}
-    # required check
     missing = [n for n, s in slots.items() if s.get("required") and n not in values]
     if missing:
         raise SystemExit(f"ERROR: missing required slot value(s): {missing}")
@@ -76,7 +72,7 @@ def compile_template(template, values):
             continue
         val = values[name]
         sentinel = s.get("sentinel")
-        if sentinel is not None:  # numeric slot
+        if sentinel is not None:
             num_subs[int(sentinel)] = val
         else:
             str_subs[f"<<{name}>>"] = val
@@ -103,13 +99,13 @@ def main():
     wrapper = ir_to_export(lir)
     save_export(wrapper, args.out)
 
-    # mandatory validation gate
-    cmd = [sys.executable, VALIDATE, args.out]
+    inventory = None
     if args.inventory:
-        cmd += ["--inventory", args.inventory]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    print(r.stdout.strip())
-    if r.returncode != 0:
+        with open(args.inventory) as fh:
+            inventory = json.load(fh)
+    findings = validate(wrapper, inventory)
+    print_report(findings, os.path.basename(args.out))
+    if findings.n_err:
         print(f"COMPILE FAILED VALIDATION — {args.out} not safe to import", file=sys.stderr)
         sys.exit(1)
     print(f"OK: wrote validated bot -> {args.out}")

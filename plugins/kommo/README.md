@@ -36,7 +36,7 @@ Operação do Kommo CRM (ex-amoCRM) pela API v4, para qualquer conta.
 
    `KOMMO_DOMAIN_<PERFIL>` ou `KOMMO_DOMAIN` substituem o domínio do config, se precisar.
 
-Os scripts precisam de `bash`, `curl` e `jq` (kommo-crm) e de Python 3 sem dependências externas (kommo-salesbot-builder). Os relatórios vão para `./kommo-reports/` (ou `$REPORT_DIR`) e os baselines de pipeline ficam em `./kommo-baselines/`. Os relatórios de cohort e o dump de contatos têm dados pessoais: mantenha `kommo-reports/` no `.gitignore`.
+Os scripts precisam de `bash`, `curl` e `jq` (todas as skills; o `resolve_ids.sh` do salesbot também) e de Python 3 sem dependências externas (validação e compilação do kommo-salesbot-builder). Os relatórios vão para `./kommo-reports/` (ou `$REPORT_DIR`) e os baselines de pipeline ficam em `./kommo-baselines/`. Os relatórios de cohort e o dump de contatos têm dados pessoais: mantenha `kommo-reports/` no `.gitignore`.
 
 ## Regras que as skills seguem
 
@@ -50,7 +50,7 @@ Os scripts precisam de `bash`, `curl` e `jq` (kommo-crm) e de Python 3 sem depen
 ## Testes
 
 ```bash
-bash plugins/kommo/skills/kommo-crm/scripts/test_scripts.sh          # sem rede nem credenciais
+bash plugins/kommo/tests/test_scripts.sh                            # sem rede nem credenciais
 bash plugins/kommo/skills/kommo-salesbot-builder/tests/run_all.sh    # provas offline do validador
 ```
 

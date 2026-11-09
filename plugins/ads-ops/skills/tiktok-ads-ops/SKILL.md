@@ -38,7 +38,7 @@ Leia o perfil do TikTok no arquivo de config do ads-ops, procurado em `$ADS_OPS_
 
 - Use `timezone`, `currency`, `display_name`, `landing_page` e `pixel_id` do perfil como valores padrao dos payloads, salvo pedido do usuario.
 - Se houver mais de um perfil e o usuario nao disser qual, pergunte. Se nao houver config, peca o advertiser ID; o `/ads-ops:setup` e opcional e so vale a pena para quem usa sempre as mesmas contas ou chama a API direto.
-- Chamadas diretas usam o header `Access-Token` com o valor de `TIKTOK_ACCESS_TOKEN_<PERFIL>` ou `TIKTOK_ACCESS_TOKEN` (`<PERFIL>` em maiusculas, `-` vira `_`). Nunca grave o token em arquivo.
+- Chamadas diretas usam o header `Access-Token` com o valor de `TIKTOK_ACCESS_TOKEN_<PERFIL>` ou `TIKTOK_ACCESS_TOKEN` (`<PERFIL>` em maiusculas, todo caractere que nao e letra nem numero vira `_`). Nunca grave o token em arquivo.
 - Se o perfil indicar `mcp_write_tool` / `mcp_report_tool`, use essas tools (secao 3). Se nao, procure uma tool de TikTok Ads disponivel na sessao antes de cair para chamadas HTTP diretas.
 
 ## Quando Usar

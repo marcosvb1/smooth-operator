@@ -26,7 +26,7 @@ claude plugin eval ./plugins/smooth-operator --ablation none \
 - `--ablation none`: the no-plugin arm can't fire the skill, so it adds cost and no signal here.
 - `--model <id>` pins the model; without it the run uses Claude Code's default.
 - `--tag should-trigger` or `--tag should-not-trigger` runs one side; `--case 'p0*'` filters by name.
-- `--tag hard` runs only the harder set (see the end of `CASES.md`); the original 32 cases scored 100% in the first pilot, so they leave no room to improve the description.
+- `--tag hard` runs only the harder set (tagged `hard` in `CASES.md`); the original 32 cases scored 100% in the first pilot, so they leave no room to improve the description.
 - `--tag holdout` runs the cases kept out of description edits, to check that a change generalizes.
 - Results and the HTML report go to `evals/results/<timestamp>/` (git-ignored).
 

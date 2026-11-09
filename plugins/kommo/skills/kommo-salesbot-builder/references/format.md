@@ -2,7 +2,7 @@
 
 Derivado por engenharia reversa de 24 bots reais (known-good, de várias contas) + doc dev oficial,
 e conferido em imports reais. O corpus original não é distribuído; os pontos abaixo foram
-**provados** pelo `validate.py` (passou nos 24, rejeitou malformados) e pelo `roundtrip.py`
+**provados** pelo `validate.py` (passou nos 24, rejeitou malformados) e pelo `tests/roundtrip.py`
 (parse→regenera→diff = identidade nos 24). `tests/run_all.sh` repete as provas num corpus sintético. Onde o formato real diverge da doc
 dev, a doc real (export) prevalece — é ela que o import da UI consome.
 
@@ -51,7 +51,7 @@ Array de blocos. Tipos observados:
 Campos por bloco: `id`, `step`, `type`, `name?`, `goto?` (`{"block": <id>}`), `actions[]`,
 `block_uuid?`, `links?` (quase sempre `null`/`[]`), e **cosméticos** `x,y,z,width,height`.
 
-> **Cosmético vs. semântico (provado):** `x,y,z,width,height` são **só layout** — `roundtrip.py`
+> **Cosmético vs. semântico (provado):** `x,y,z,width,height` são **só layout** — `tests/roundtrip.py`
 > regenera com auto-layout e o diff semântico continua idêntico nos 24. Tudo o mais é semântico.
 
 ## 4. Os dois endereçamentos (fonte nº1 de erro)
@@ -222,11 +222,11 @@ Campos de sistema (NÃO checados contra o registro de CF): `{{lead.source_id}}`,
 | Kind | Onde | Resolução |
 |---|---|---|
 | chat_source | `send_message.chat_sources[].id` | **NÃO via API** (`/sources`=204). Lift de bot existente + confirmar |
-| pipeline_id | `change_status.params.pipeline_id` | `resolve_ids.py` (leads/pipelines) |
+| pipeline_id | `change_status.params.pipeline_id` | `resolve_ids.sh` (leads/pipelines) |
 | status_id | `change_status.params.value` | idem (statuses embutidos) |
-| custom field | `set_custom_fields.custom_fields_id` / `{{lead.cf.ID}}` | `resolve_ids.py` (leads/contacts custom_fields) |
+| custom field | `set_custom_fields.custom_fields_id` / `{{lead.cf.ID}}` | `resolve_ids.sh` (leads/contacts custom_fields) |
 | enum | `{{lead.cf.ID.ENUM}}` / value de select | idem (enums do cf) |
-| user | `change_responsible_user.value`, `subscribe`, `send_internal.user_id` | `resolve_ids.py` (users) |
+| user | `change_responsible_user.value`, `subscribe`, `send_internal.user_id` | `resolve_ids.sh` (users) |
 | bot | `start.params.bot` | exportar/listar bots na conta |
 
 Os 24 exemplos são de **contas estrangeiras** — todos os ids acima são inválidos fora delas.
@@ -260,8 +260,7 @@ broadcast); `POS_ORPHAN` (bloco question em positions sem step no text); `BLOCK_
 `pipeline_id`** (cross-membership; obs.: 142/143 são status de sistema "ganho/perdido" presentes em
 TODA pipeline); `custom_fields_id` existe; `change_responsible_user.value`, `send_internal.user_id`,
 `trigger.settings.responsible_user` são usuários da conta; `set_custom_fields` valor digit-string em
-CF select é enum válido daquele CF; `{{*.cf.ID(.ENUM)}}` resolve; `start.bot` ∈ `inventory.bots`
-(se a lista existir). WARN: `chat_source` só limpo se em `chat_sources.confirmed`.
+CF select é enum válido daquele CF; `{{*.cf.ID(.ENUM)}}` resolve. WARN: `chat_source` só limpo se em `chat_sources.confirmed`.
 
 ## 10. Perguntas em aberto — resolver no 1º import real
 

@@ -73,7 +73,7 @@ Pra "remover" Incoming leads: setting `is_unsorted_on: false` no pipeline (UI). 
 
 `PATCH /pipelines/{id}/statuses` (sem `{status_id}` final) retorna **HTTP 405**. Sempre 1 PATCH por status.
 
-Rate limit: 7 req/s. Usar `sleep 0.18` entre PATCHs. 429 → sleep 1s + retry.
+Rate limit: veja a seção "Rate limit" do `SKILL.md` (PATCH não tem retry).
 
 ## Sort — reordenamento agressivo
 
@@ -122,10 +122,7 @@ DELETE /api/v4/leads/pipelines/{pipe}/statuses/{id}
 Sempre incluir `name + sort + color + descriptions` no PATCH (mesmo campos que "não quero mudar") — Kommo reseta o que não vier.
 
 ```bash
-curl -X PATCH "${DOMAIN}/api/v4/leads/pipelines/${PIPE}/statuses/${SID}" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{
+kommo_request PATCH "${DOMAIN}/api/v4/leads/pipelines/${PIPE}/statuses/${SID}" '{
     "name": "<nome>",
     "sort": <sort>,
     "color": "<cor_da_palette>",

@@ -23,7 +23,7 @@ python3 "$HERE/test_validate.py" --corpus "$CORPUS" || rc=1
 
 echo ""
 echo "### 2/4 round-trip fidelity (parse->regenerate->diff + re-validate)"
-if python3 "$SKILL/scripts/roundtrip.py" --corpus "$CORPUS" > "$TMP/rt.log" 2>&1; then
+if python3 "$HERE/roundtrip.py" --corpus "$CORPUS" > "$TMP/rt.log" 2>&1; then
   tail -2 "$TMP/rt.log"
 else
   cat "$TMP/rt.log"; rc=1
@@ -31,22 +31,15 @@ fi
 
 echo ""
 echo "### 3/4 template-generation fidelity (compile original values -> projection == source bot)"
-python3 "$SKILL/scripts/roundtrip_templates.py" --corpus "$CORPUS" || rc=1
+python3 "$HERE/roundtrip_templates.py" --corpus "$CORPUS" || rc=1
 
 echo ""
 echo "### 4/4 compile smoke (each template -> validate, structural only)"
 for tpl in "$SKILL"/templates/*.json; do
   name="$(basename "$tpl" .json)"
-  # valores mínimos: todo slot obrigatório ganha um placeholder; slots numéricos ganham 1
   vals="$TMP/$name.vals.json"
-  python3 - "$tpl" "$vals" <<'PY'
-import json,sys
-tpl=json.load(open(sys.argv[1])); v={}
-for s in tpl.get("slots",[]):
-    if not s.get("required"): continue
-    v[s["name"]] = 1 if s.get("sentinel") is not None else f"<{s['name']}>"
-json.dump(v, open(sys.argv[2],"w"))
-PY
+  PYTHONPATH="$HERE" python3 -c 'import json, sys; from make_fixture_corpus import dummy_values
+json.dump(dummy_values(json.load(open(sys.argv[1]))), open(sys.argv[2], "w"))' "$tpl" "$vals"
   out="$TMP/$name.bot.json"
   if python3 "$SKILL/scripts/compile.py" "$tpl" --values "$vals" --out "$out" >/dev/null 2>&1; then
     echo "  ✓ $name compiles + validates (structural)"

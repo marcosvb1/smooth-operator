@@ -26,3 +26,10 @@ jobs:
             [ -e "$manifest" ] || continue
             claude plugin validate "$(dirname "$(dirname "$manifest")")"
           done
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Offline tests
+        run: |
+          pip install requests
+          bash scripts/test.sh

@@ -1,5 +1,5 @@
 {
-  "job_type": "campaigns",
+  "job_type": "duplicate_campaigns",
   "deep_copy": true,
   "rename_strategy": "DEEP_RENAME",
   "rename_suffix": " - Copy",

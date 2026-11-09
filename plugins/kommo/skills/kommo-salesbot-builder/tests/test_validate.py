@@ -11,47 +11,28 @@ Exit: 0 if all assertions hold, 1 otherwise.
 This is the "sem erros" regression test: if a future format-model change breaks
 either direction, this fails loudly.
 """
-import argparse
 import copy
 import json
 import os
-import subprocess
 import sys
-import tempfile
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-VALIDATE = os.path.join(HERE, "..", "scripts", "validate.py")
-DEFAULT_CORPUS = os.environ.get("SALESBOT_CORPUS")  # tests/run_all.sh builds a synthetic one when unset
-
-
-def run_validate(wrapper):
-    fd, p = tempfile.mkstemp(suffix=".json")
-    os.close(fd)
-    with open(p, "w") as fh:
-        json.dump(wrapper, fh)
-    try:
-        r = subprocess.run([sys.executable, VALIDATE, p, "--json"], capture_output=True, text=True)
-        out = json.loads(r.stdout)
-    finally:
-        os.unlink(p)
-    err_codes = [f["code"] for f in out["findings"] if f["severity"] == "ERROR"]
-    return out["errors"], err_codes
+from proof import corpus_dir, corpus_files, error_codes
+from salesbot_model import iter_handlers, text_steps
 
 
 def positive(corpus):
-    files = [f for f in os.listdir(corpus) if f.endswith(".json")]
+    files = corpus_files(corpus)
     fails = []
-    for name in sorted(files):
+    for name in files:
         with open(os.path.join(corpus, name)) as fh:
-            w = json.load(fh)
-        n_err, codes = run_validate(w)
-        if n_err:
+            codes = error_codes(json.load(fh))
+        if codes:
             fails.append((name, codes))
     return len(files), fails
 
 
 def mutations(base):
-    """Return list of (name, mutated_wrapper, expected_error_code)."""
+    """Return list of (name, mutated_wrapper or None if base lacks the feature, expected_error_code)."""
     out = []
 
     m = copy.deepcopy(base); del m["model"]["text"]
@@ -61,7 +42,7 @@ def mutations(base):
     out.append(("corrupt text json", m, "TEXT_PARSE"))
 
     m = copy.deepcopy(base); t = json.loads(m["model"]["text"])
-    first = next(k for k in t if k != "conversation")
+    first = next(iter(text_steps(t)))
     t[first].setdefault("question", []).append({"handler": "goto", "params": {"step": 99999, "type": "question"}})
     m["model"]["text"] = json.dumps(t)
     out.append(("dangling text goto", m, "GOTO_DANGLE"))
@@ -70,11 +51,11 @@ def mutations(base):
     # mutate a block_uuid that also exists in positions
     pos = json.loads(m["model"]["positions"])
     pos_steps_with_uuid = {str(b.get("step")): b.get("block_uuid") for b in pos if b.get("block_uuid")}
-    target = next((k for k in t if k != "conversation" and str(k) in pos_steps_with_uuid), None)
+    target = next((k for k in text_steps(t) if str(k) in pos_steps_with_uuid), None)
     if target:
         t[target]["block_uuid"] = "00000000-0000-0000-0000-000000000000"
         m["model"]["text"] = json.dumps(t)
-        out.append(("block_uuid mismatch", m, "SYNC_UUID"))
+    out.append(("block_uuid mismatch", m if target else None, "SYNC_UUID"))
 
     m = copy.deepcopy(base); pos = json.loads(m["model"]["positions"])
     for b in pos:
@@ -85,7 +66,7 @@ def mutations(base):
     out.append(("positions goto.block dangling", m, "POS_GOTO_DANGLE"))
 
     m = copy.deepcopy(base); t = json.loads(m["model"]["text"])
-    first = next(k for k in t if k != "conversation")
+    first = next(iter(text_steps(t)))
     blk = t[first].setdefault("question", [{}])
     blk[0].setdefault("params", {})["text"] = "Z" * 70000
     m["model"]["text"] = json.dumps(t)
@@ -93,31 +74,22 @@ def mutations(base):
 
     m = copy.deepcopy(base); pos = json.loads(m["model"]["positions"])
     t = json.loads(m["model"]["text"])
-    drop = next((k for k in t if k != "conversation"), None)
+    drop = next(iter(text_steps(t)), None)
     pos = [b for b in pos if str(b.get("step")) != str(drop)]
     m["model"]["positions"] = json.dumps(pos)
     out.append((f"drop positions block step {drop}", m, "SYNC_TEXT_POS"))
 
     # bare waits-condition target (not handler:goto) pointing nowhere
     m = copy.deepcopy(base); t = json.loads(m["model"]["text"]); done = False
-    for sid, step in t.items():
-        if sid == "conversation" or not isinstance(step, dict):
-            continue
-        for b in ("question", "answer", "finish"):
-            for h in step.get(b, []) or []:
-                if isinstance(h, dict) and h.get("handler") == "waits":
-                    conds = h.get("params", {}).get("conditions", [])
-                    if conds and isinstance(conds[0].get("action"), dict):
-                        conds[0]["action"]["step"] = 99999
-                        done = True
-                        break
-            if done:
-                break
-        if done:
+    for h in iter_handlers(t):
+        conds = h.get("params", {}).get("conditions", []) if h["handler"] == "waits" else []
+        if conds and isinstance(conds[0].get("action"), dict):
+            conds[0]["action"]["step"] = 99999
+            done = True
             break
     if done:
         m["model"]["text"] = json.dumps(t)
-        out.append(("dangling waits target", m, "GOTO_DANGLE"))
+    out.append(("dangling waits target", m if done else None, "GOTO_DANGLE"))
 
     # dangling action links.block (branch edge in positions)
     m = copy.deepcopy(base); pos = json.loads(m["model"]["positions"]); done = False
@@ -137,7 +109,7 @@ def mutations(base):
             break
     if done:
         m["model"]["positions"] = json.dumps(pos)
-        out.append(("dangling action links.block", m, "POS_LINK_DANGLE"))
+    out.append(("dangling action links.block", m if done else None, "POS_LINK_DANGLE"))
 
     # remove the single start block
     m = copy.deepcopy(base); pos = json.loads(m["model"]["positions"])
@@ -147,47 +119,34 @@ def mutations(base):
 
     # change_status with pipeline_id removed (structural — status alone is ambiguous)
     m = copy.deepcopy(base); t = json.loads(m["model"]["text"]); done = False
-    for s in t.values():
-        if isinstance(s, dict):
-            for b in ("question", "answer", "finish"):
-                for h in s.get(b, []) or []:
-                    if isinstance(h, dict) and h.get("handler") == "action" \
-                            and h.get("params", {}).get("name") == "change_status" \
-                            and isinstance(h["params"].get("params"), dict):
-                        h["params"]["params"].pop("pipeline_id", None)
-                        done = True
+    for h in iter_handlers(t):
+        p = h.get("params", {})
+        if h["handler"] == "action" and p.get("name") == "change_status" and isinstance(p.get("params"), dict):
+            p["params"].pop("pipeline_id", None)
+            done = True
     if done:
         m["model"]["text"] = json.dumps(t)
-        out.append(("change_status missing pipeline_id", m, "PIPELINE_REQUIRED"))
+    out.append(("change_status missing pipeline_id", m if done else None, "PIPELINE_REQUIRED"))
 
     # chat_sources id as string instead of int (structural type check)
     m = copy.deepcopy(base); t = json.loads(m["model"]["text"]); done = False
-    for s in t.values():
-        if isinstance(s, dict):
-            for b in ("question", "answer", "finish"):
-                for h in s.get(b, []) or []:
-                    if isinstance(h, dict) and h.get("handler") == "send_message":
-                        srcs = h.get("params", {}).get("chat_sources")
-                        if srcs and isinstance(srcs[0], dict) and "id" in srcs[0]:
-                            srcs[0]["id"] = str(srcs[0]["id"])
-                            done = True
+    for h in iter_handlers(t):
+        srcs = h.get("params", {}).get("chat_sources") if h["handler"] == "send_message" else None
+        if srcs and isinstance(srcs[0], dict) and "id" in srcs[0]:
+            srcs[0]["id"] = str(srcs[0]["id"])
+            done = True
     if done:
         m["model"]["text"] = json.dumps(t)
-        out.append(("chat_sources id as string", m, "CHATSRC_TYPE"))
+    out.append(("chat_sources id as string", m if done else None, "CHATSRC_TYPE"))
 
     return out
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--corpus", default=DEFAULT_CORPUS)
-    args = ap.parse_args()
-    if not args.corpus or not os.path.isdir(args.corpus):
-        sys.exit("corpus not found: pass --corpus DIR or set SALESBOT_CORPUS "
-                 "(tests/run_all.sh builds a synthetic corpus when none is given)")
+    corpus = corpus_dir()
 
     print("== POSITIVE: corpus must pass ==")
-    n, fails = positive(args.corpus)
+    n, fails = positive(corpus)
     if fails:
         for name, codes in fails:
             print(f"  ✗ {name}: {codes}")
@@ -196,16 +155,19 @@ def main():
         print(f"  ✓ all {n} corpus bots pass with 0 errors")
 
     print("\n== NEGATIVE: mutations must be caught ==")
-    # pick a representative branching bot as mutation base
-    base_path = os.path.join(args.corpus, "cadence-followup.source.json")
+    base_path = os.path.join(corpus, "cadence-followup.source.json")
     if not os.path.isfile(base_path):
-        base_path = os.path.join(args.corpus, sorted(os.listdir(args.corpus))[0])
+        base_path = os.path.join(corpus, corpus_files(corpus)[0])
     with open(base_path) as fh:
         base = json.load(fh)
     neg_fail = []
     for name, w, expect in mutations(base):
-        n_err, codes = run_validate(w)
-        caught = n_err > 0 and expect in codes
+        if w is None:
+            print(f"  ✗ {name:<32} the base bot has nothing to mutate; pick a base that has it")
+            neg_fail.append(name)
+            continue
+        codes = error_codes(w)
+        caught = expect in codes
         print(f"  {'✓' if caught else '✗'} {name:<32} expect [{expect}] -> {codes if codes else 'NOT CAUGHT'}")
         if not caught:
             neg_fail.append(name)
