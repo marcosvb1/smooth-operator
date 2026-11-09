@@ -2,7 +2,7 @@
 
 Derivado por engenharia reversa de 24 bots reais (known-good, de várias contas) + doc dev oficial,
 e conferido em imports reais. O corpus original não é distribuído; os pontos abaixo foram
-**provados** pelo `validate.py` (passou nos 24, rejeitou malformados) e pelo `roundtrip.py`
+**provados** pelo `validate.py` (passou nos 24, rejeitou malformados) e pelo `tests/roundtrip.py`
 (parse→regenera→diff = identidade nos 24). `tests/run_all.sh` repete as provas num corpus sintético. Onde o formato real diverge da doc
 dev, a doc real (export) prevalece — é ela que o import da UI consome.
 
@@ -51,7 +51,7 @@ Array de blocos. Tipos observados:
 Campos por bloco: `id`, `step`, `type`, `name?`, `goto?` (`{"block": <id>}`), `actions[]`,
 `block_uuid?`, `links?` (quase sempre `null`/`[]`), e **cosméticos** `x,y,z,width,height`.
 
-> **Cosmético vs. semântico (provado):** `x,y,z,width,height` são **só layout** — `roundtrip.py`
+> **Cosmético vs. semântico (provado):** `x,y,z,width,height` são **só layout** — `tests/roundtrip.py`
 > regenera com auto-layout e o diff semântico continua idêntico nos 24. Tudo o mais é semântico.
 
 ## 4. Os dois endereçamentos (fonte nº1 de erro)

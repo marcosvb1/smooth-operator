@@ -16,8 +16,9 @@ actions) is kept verbatim — those are semantic and drive import correctness.
   ir_to_export(ir)      -> wrapper (re-stringified, cosmetics re-applied via auto-layout)
   semantic_projection(wrapper) -> canonical structure for equality diffing (ignores cosmetics)
   auto_layout(blocks)   -> assign deterministic x/y/z/width/height
+  text_steps(text) / iter_handlers(node) -> walk the decoded model.text
 
-Round-trip fidelity (see roundtrip.py): for every known-good bot,
+Round-trip fidelity (see tests/roundtrip.py): for every known-good bot,
   semantic_projection(bot) == semantic_projection(ir_to_export(parse_to_ir(bot)))
 and ir_to_export(parse_to_ir(bot)) passes validate.py. This proves the cosmetic
 set is exactly {x,y,z,width,height} and that (de)serialization is lossless.
@@ -25,6 +26,10 @@ set is exactly {x,y,z,width,height} and that (de)serialization is lossless.
 import json
 
 COSMETIC_KEYS = ("x", "y", "z", "width", "height")
+
+# Each model.text step holds its handlers in these lanes; the other top-level key of
+# model.text is the "conversation" boolean.
+LANES = ("question", "answer", "finish")
 
 # default visual box sizes per block type (only affects appearance, not correctness)
 DEFAULT_SIZE = {
@@ -35,16 +40,33 @@ DEFAULT_SIZE = {
 }
 
 
-def _parse_blob(blob, what):
+def _parse_blob(blob):
     if isinstance(blob, (dict, list)):
-        return blob  # already parsed (tolerant)
+        return blob
     return json.loads(blob)
+
+
+def text_steps(text):
+    """The steps of a decoded model.text, keyed by step id (without "conversation")."""
+    return {k: v for k, v in text.items() if k != "conversation"}
+
+
+def iter_handlers(node):
+    """Yield every {handler, params} dict found anywhere under node (recursively)."""
+    if isinstance(node, dict):
+        if isinstance(node.get("handler"), str):
+            yield node
+        for v in node.values():
+            yield from iter_handlers(v)
+    elif isinstance(node, list):
+        for v in node:
+            yield from iter_handlers(v)
 
 
 def parse_to_ir(wrapper):
     model = wrapper["model"]
-    text = _parse_blob(model["text"], "text")
-    positions = _parse_blob(model["positions"], "positions")
+    text = _parse_blob(model["text"])
+    positions = _parse_blob(model["positions"])
     clean_positions = []
     for blk in positions:
         if isinstance(blk, dict):
@@ -103,17 +125,8 @@ def _canon(obj):
 
 def semantic_projection(wrapper):
     """Structure used for equality diffing — cosmetics stripped, keys canonicalized."""
-    ir = parse_to_ir(wrapper)
-    return _canon({
-        "type_functionality": ir["type_functionality"],
-        "name": ir["name"],
-        "type": ir["type"],
-        "text": ir["text"],
-        "positions": ir["positions"],
-    })
+    return _canon(parse_to_ir(wrapper))
 
-
-# ---- slot helpers for template adaptation (fase 1 generation) ----
 
 def load_export(path):
     with open(path) as fh:
@@ -123,12 +136,3 @@ def load_export(path):
 def save_export(wrapper, path):
     with open(path, "w") as fh:
         json.dump(wrapper, fh, ensure_ascii=False, indent=2)
-
-
-if __name__ == "__main__":
-    import sys
-    # quick self-check: parse->serialize->parse round trips a file's projection
-    w = load_export(sys.argv[1])
-    a = semantic_projection(w)
-    b = semantic_projection(ir_to_export(parse_to_ir(w)))
-    print("ROUND-TRIP OK" if a == b else "ROUND-TRIP DIFF")

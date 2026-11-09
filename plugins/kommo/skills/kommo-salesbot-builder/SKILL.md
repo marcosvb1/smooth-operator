@@ -58,7 +58,7 @@ A saída **sempre** passa pelo `validate.py` antes de ser entregue.
 ## Como "sem erros" é garantido
 
 1. `scripts/validate.py` aceita bots known-good e rejeita malformados (`tests/test_validate.py`).
-2. `scripts/roundtrip.py` prova que o modelo do formato é fiel (parse → regenera → diff semântico).
+2. `tests/roundtrip.py` prova que o modelo do formato é fiel (parse → regenera → diff semântico).
 3. 1 import manual confirma o aceite na conta real.
 
 Nunca entregue um bot que não passou no `validate.py`.
@@ -149,12 +149,12 @@ importado, age sobre leads reais. Por isso:
 | `references/api-and-runtime.md` | API de bots, `chat_source`, templates de WhatsApp, `widget_request` |
 | `scripts/resolve_ids.sh` | Inventário de IDs ao vivo por perfil (+ scan de `chat_sources` em exports) |
 | `scripts/validate.py` | Valida um export contra os invariantes + inventário |
-| `scripts/roundtrip.py` | export → IR → export com diff semântico |
-| `scripts/roundtrip_templates.py` | Prova que cada template regenera o bot-fonte |
 | `scripts/compile.py` | Template + valores → JSON de export validado |
 | `scripts/salesbot_model.py` | Parse/serialize do formato (IR) |
 | `templates/` | Esqueletos de IR sem copy + README |
 | `tests/run_all.sh` | Roda todas as provas offline (corpus sintético ou `$SALESBOT_CORPUS`) |
+| `tests/roundtrip.py` | Prova: export → IR → export com diff semântico |
+| `tests/roundtrip_templates.py` | Prova: cada template regenera o bot-fonte |
 | `viz/salesbot-viewer.html` | Visualizador read-only de um export, abre no navegador sem dependências |
 
 ## Corpus de prova

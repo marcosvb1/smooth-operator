@@ -8,7 +8,7 @@ Quem decide copy e fluxo é o chamador; o template só dá a forma do grafo já 
 Estrutura de um template:
 
 - `meta` — `name`, `pattern`, `description`, `channels` e `source_bot` (nome do arquivo-fonte
-  que o `roundtrip_templates.py` procura no corpus; no corpus sintético do `tests/run_all.sh`,
+  que o `tests/roundtrip_templates.py` procura no corpus; no corpus sintético do `tests/run_all.sh`,
   é o próprio template compilado com valores fictícios).
 - `slots` — o que preencher: `name`, `kind`, `required`, `hint` e, nos numéricos, `sentinel`.
 - `lir` — o esqueleto. Slots de texto aparecem como a string `"<<nome>>"`; slots numéricos (IDs,

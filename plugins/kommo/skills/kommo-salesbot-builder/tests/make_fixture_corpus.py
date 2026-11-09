@@ -20,13 +20,10 @@ import os
 import shutil
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-SKILL = os.path.dirname(HERE)
-sys.path.insert(0, os.path.join(SKILL, "scripts"))
-from compile import compile_template  # noqa: E402
-from salesbot_model import ir_to_export, save_export  # noqa: E402
+from proof import SKILL, TEMPLATES
+from compile import compile_template
+from salesbot_model import ir_to_export, save_export
 
-TEMPLATES = os.path.join(SKILL, "templates")
 SAMPLE = os.path.join(SKILL, "viz", "sample-bot.export.json")
 
 # dummy numeric ids per slot kind (positive, obviously fake)

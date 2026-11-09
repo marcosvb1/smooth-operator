@@ -19,8 +19,12 @@ Usage:
 """
 import argparse
 import json
+import os
 import re
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from salesbot_model import LANES, iter_handlers, text_steps as split_steps  # noqa: E402
 
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 MAX_BOT_BYTES = 64 * 1024
@@ -85,18 +89,6 @@ def _check_send_message(f, params, where, sid):
     # in isolation is exactly the mistake that produced the wrong verdict on 2026-09-02.
 
 
-def iter_handlers(node):
-    """Yield every {handler, params} dict found anywhere under node (recursively)."""
-    if isinstance(node, dict):
-        if "handler" in node and isinstance(node.get("handler"), str):
-            yield node
-        for v in node.values():
-            yield from iter_handlers(v)
-    elif isinstance(node, list):
-        for v in node:
-            yield from iter_handlers(v)
-
-
 def validate(wrapper, inventory=None):
     f = Findings()
 
@@ -145,7 +137,7 @@ def validate(wrapper, inventory=None):
         f.err("SIZE", f"model.text is {tlen} bytes (> 64KB limit)", "$.model.text")
 
     # ---- text steps ----
-    text_steps = {k: v for k, v in text.items() if k != "conversation"}
+    text_steps = split_steps(text)
     if "conversation" not in text:
         f.warn("TEXT_CONV", "model.text missing top-level 'conversation' boolean (corpus has it)", "$.model.text")
     text_step_ids = set()
@@ -157,7 +149,7 @@ def validate(wrapper, inventory=None):
         if not isinstance(step, dict):
             f.err("STEP_SHAPE", f"step {sid} must be an object", f"text.{sid}")
             continue
-        blocks = [b for b in ("question", "answer", "finish") if b in step]
+        blocks = [b for b in LANES if b in step]
         if not blocks:
             f.err("STEP_BLOCKS", f"step {sid} has no question/answer/finish array", f"text.{sid}")
         bu = step.get("block_uuid")
@@ -451,6 +443,14 @@ def _inventory_pass(f, text, positions, inv):
             f.err("INV_ENUM_PH", f"placeholder references enum id {eid} not in this account")
 
 
+def print_report(f, name):
+    for it in f.items:
+        mark = "✗" if it["severity"] == "ERROR" else "⚠"
+        print(f"  {mark} [{it['code']}] {it['message']}" + (f"  ({it['where']})" if it["where"] else ""))
+    status = "PASS" if f.n_err == 0 else "FAIL"
+    print(f"{status}: {f.n_err} error(s), {f.n_warn} warning(s) — {name}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("bot", help="path to a salesbot export json")
@@ -471,11 +471,7 @@ def main():
     if args.json:
         print(json.dumps({"errors": f.n_err, "warnings": f.n_warn, "findings": f.items}, ensure_ascii=False, indent=2))
     else:
-        for it in f.items:
-            mark = "✗" if it["severity"] == "ERROR" else "⚠"
-            print(f"  {mark} [{it['code']}] {it['message']}" + (f"  ({it['where']})" if it["where"] else ""))
-        status = "PASS" if f.n_err == 0 else "FAIL"
-        print(f"{status}: {f.n_err} error(s), {f.n_warn} warning(s) — {args.bot.split('/')[-1]}")
+        print_report(f, os.path.basename(args.bot))
 
     rc = 1 if f.n_err or (args.strict and f.n_warn) else 0
     sys.exit(rc)

@@ -24,7 +24,7 @@ export  --parse_to_ir-->  IR  --(editar)-->  IR'  --ir_to_export-->  export'
   blobs, remonta o wrapper.
 - `semantic_projection(wrapper)`: canônico pra diff (ignora cosmético, ordena chaves).
 
-**Fidelidade provada** (`roundtrip.py`), no corpus que o `tests/run_all.sh` usa (sintético por
+**Fidelidade provada** (`tests/roundtrip.py`), no corpus que o `tests/run_all.sh` usa (sintético por
 padrão; `$SALESBOT_CORPUS` aponta para exports reais): para todo bot,
 `semantic_projection(orig) == semantic_projection(ir_to_export(parse_to_ir(orig)))` **e** o
 regenerado passa no `validate.py`. Logo o IR é lossless fora do layout.
