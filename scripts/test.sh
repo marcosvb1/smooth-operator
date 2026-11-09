@@ -9,7 +9,7 @@ run() { echo "### $*"; "$@" || { echo "FALHOU: $*"; rc=1; }; echo; }
 run bash "$ROOT/plugins/kommo/tests/test_scripts.sh"
 run bash "$ROOT/plugins/kommo/skills/kommo-salesbot-builder/tests/run_all.sh"
 run python3 "$ROOT/plugins/ads-ops/tests/test_meta_job.py"
-run python3 "$ROOT/skills/mise-en-place/scripts/check_secrets.py" --self-test
+run python3 "$ROOT/plugins/smooth-operator/skills/mise-en-place/scripts/check_secrets.py" --self-test
 EVAL_DIRS=()
 for cases in "$ROOT"/plugins/*/evals/CASES.md "$ROOT"/skills/*/evals/CASES.md; do
   [ -f "$cases" ] && EVAL_DIRS+=("$(dirname "$cases")")
