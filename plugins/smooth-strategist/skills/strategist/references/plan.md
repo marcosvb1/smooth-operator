@@ -1,13 +1,8 @@
----
-name: plan
-description: "Use when a direction has been chosen and it has to turn into execution: builds a plan with phases and what ends each one, workstreams with owners, milestones, the decisions still to come and when they are due, the main risks, and what to measure along the way. Fits any domain, e.g. \"turn this decision into a roadmap\", \"plan the rollout of the new process to the regional teams\", \"what do we do in the first 90 days?\", \"plan our move to the new vendor\", \"monta o plano de execução\", \"faz um roadmap disso\", \"como a gente tira isso do papel?\". Not for choosing between options (use decide), and not for planning code changes inside a coding session or breaking a ticket into tasks."
----
-
 # Plan
 
 Turn a chosen direction into something people can execute and check: who does what, in what order, what marks progress and what would show the plan is wrong.
 
-Last of five skills in one cycle: `frame` → `analyze` → `narrate` → `decide` → **plan**, then back to `frame` with what execution taught. Each works alone. If the direction is not settled yet, use `decide` first; a plan for an open question hides the question.
+Last of five stages: `frame` → `analyze` → `narrate` → `decide` → **plan**, then back to `frame` with what execution taught. If the direction is not settled, name the open choice at the top, with who makes it and by when, and plan in the light of it; a plan for an open question hides the question.
 
 The parts are the same for a product launch, a system migration, a research project or moving house. Scale them to the size of the job: a two-week effort needs a list, not a programme.
 

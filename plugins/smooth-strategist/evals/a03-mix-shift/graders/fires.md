@@ -1,6 +1,6 @@
 ---
 type: tool_used
 tool: Skill
-input_match: '"skill"\s*:\s*"(?:[\w-]+:)?analyze"'
+input_match: '"skill"\s*:\s*"(?:[\w-]+:)?strategist"'
 min: 1
 ---

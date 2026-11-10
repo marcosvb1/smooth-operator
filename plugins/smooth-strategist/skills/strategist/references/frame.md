@@ -1,13 +1,8 @@
----
-name: frame
-description: "Use when a request is broad or vague and nobody has written down what the problem actually is, before pulling data or proposing solutions: turns it into a precise problem statement and a tree of drivers or hypotheses that says what to look at first. Fits any domain, e.g. \"sales dropped, what do we do?\", \"our support queue keeps growing and nobody knows why\", \"I feel stuck in my career and don't know what to change\", \"as vendas caíram, o que fazemos?\", \"me ajuda a estruturar esse problema\", \"break this problem down\", \"build an issue tree\". Also when a problem is stated as a symptom, already contains its solution, or is too big to act on. Not for analyzing data that is already on the table (use analyze) or for comparing options that are already defined (use decide), and not for hands-on debugging of a specific bug in the current repo; framing an engineering problem such as a slow test suite is in scope."
----
-
 # Frame
 
 Turn a vague request into two things: a problem statement precise enough to test, and a tree that says exactly what needs to be looked at.
 
-This is the first of five skills that follow one cycle: **frame** → `analyze` → `narrate` → `decide` → `plan`, then back to frame with what execution taught. Each works alone. If the user arrives with the problem already stated and broken down, go straight to `analyze`.
+First of five stages: **frame** → `analyze` → `narrate` → `decide` → `plan`, then back to frame with what execution taught.
 
 The method is the same for a company, a codebase, a research question or a personal choice. Take the vocabulary and the examples from the user's domain, not from this file.
 
@@ -42,7 +37,7 @@ When the domain has no natural metric, as in many personal problems, use an obse
 
 ### SCQ: Situation, Complication, Question
 
-Situation, complication and question come from Barbara Minto, *The Pyramid Principle*; the statement line is this skill's addition.
+Situation, complication and question come from Barbara Minto, *The Pyramid Principle*; the statement line is an addition made here.
 
 - **Situation**: the context everyone needs to start from the same place. Facts nobody disputes.
 - **Complication**: what changed or threatens the situation, and why it calls for action now. Put a number on it whenever possible.

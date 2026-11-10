@@ -1,13 +1,8 @@
----
-name: narrate
-description: "Use when findings or a recommendation have to be communicated to someone who will decide or act: builds the storyline for a document, deck, memo, executive summary or email with the answer first and the evidence under it, or tells what already happened as a retrospective. Fits any domain, e.g. \"turn this analysis into a recommendation for the board\", \"outline the deck for this proposal\", \"write the exec summary\", \"how do I present this to my manager?\", \"write up how the project went\", \"monta o storyline dessa apresentação\", \"organiza esses achados numa narrativa\", \"escreve o resumo executivo\". Not for extracting the findings from data (use analyze) or comparing options (use decide), for designing or generating the slides themselves (a presentation skill does that with this storyline as content), for brand or advertising copy, or for fiction."
----
-
 # Narrate
 
-Turn findings into something a busy reader can follow and act on. A capable model already writes clearly; this skill holds the few rules that keep the piece honest and ready to use.
+Turn findings into something a busy reader can follow and act on. A capable model already writes clearly; this stage holds the few rules that keep the piece honest and ready to use.
 
-Third of five skills in one cycle: `frame` → `analyze` → **narrate** → `decide` → `plan`. Each works alone. If the user comes straight here, state in one sentence what the central question is and go on.
+Third of five stages: `frame` → `analyze` → **narrate** → `decide` → `plan`.
 
 Respond in the user's language.
 

@@ -49,7 +49,7 @@
     {
       "name": "smooth-strategist",
       "source": "./plugins/smooth-strategist",
-      "description": "Structured problem solving for any domain, in five skills: frame the problem, analyze the evidence, narrate the answer, structure the decision and plan the execution.",
+      "description": "Structured problem solving for any domain, in one skill with five stages: frame the problem, analyze the evidence, narrate the answer, structure the decision and plan the execution.",
       "category": "productivity",
       "keywords": [
         "problem-solving",

@@ -2,7 +2,7 @@
 name: n03-wrong-growth
 tags: [narrate, trap]
 plugins: ["../.."]
-max_turns: 4
+max_turns: 6
 timeout_seconds: 300
 allowed_tools: [Read, Glob, Grep, Skill]
 ---

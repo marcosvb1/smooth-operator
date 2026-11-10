@@ -1,8 +1,8 @@
 # smooth-strategist
 
-Structured problem solving for any domain, in five skills that follow one cycle. Each works on its own; together they take a vague request to an executable plan.
+Structured problem solving for any domain: one skill, `strategist`, that works through five stages of one cycle. It finds the stage a request asks for, checks once that the stages before it hold, and goes back to one only when that changes the answer.
 
-| Skill | Use it when | You get |
+| Stage | Use it when | You get |
 | --- | --- | --- |
 | `frame` | The request is vague and nobody wrote down what the problem is | A testable problem statement and a tree of drivers or hypotheses with an analysis plan |
 | `analyze` | There is data or evidence and you need conclusions | The few insights that answer the question: fact, why it matters, what to do |
@@ -10,7 +10,7 @@ Structured problem solving for any domain, in five skills that follow one cycle.
 | `decide` | There is a choice between options or a list to prioritize | The options side by side on the same criteria, what is reversible, who decides |
 | `plan` | A direction is chosen and has to become execution | Phases, workstreams with owners, milestones, pending decisions, risks, what to measure |
 
-The skills are not tied to business problems. The same method serves "sales dropped", "the test suite got slow", "which vendor do we pick" or "should I change careers"; vocabulary and examples come from the user's domain. They answer in the user's language.
+The skill is not tied to business problems. The same method serves "sales dropped", "the test suite got slow", "which vendor do we pick" or "should I change careers"; vocabulary and examples come from the user's domain. It answers in the user's language.
 
 ## Install
 
@@ -22,14 +22,15 @@ The skills are not tied to business problems. The same method serves "sales drop
 /plugin install smooth-strategist@smooth-operator
 ```
 
-Then ask in plain words ("sales dropped, what do we do?", "what does this spreadsheet tell us?", "help me choose between these three vendors") or call a skill directly, e.g. `/smooth-strategist:frame`.
+Then ask in plain words ("sales dropped, what do we do?", "what does this spreadsheet tell us?", "help me choose between these three vendors") or call the skill directly with `/smooth-strategist:strategist`.
 
 ## Design
 
-- **Result, not method.** Each skill uses its frameworks to think and check, and keeps them out of the answer. The reader gets the statement, the insight, the comparison or the plan.
-- **No invented numbers.** Targets, dates, owners, scores and probabilities belong to the user. When they are missing, the skill leaves a marked slot.
-- **Recommendation only on request.** `decide` lays the options out fairly and names a winner only when asked.
-- **No connectors or external tools required.** `analyze` and `decide` compute with code when the environment can run it and show the arithmetic when it cannot. For charts, decks or spreadsheets the skills hand the structure to whatever skill the environment has.
+- **One skill, not five.** With five separate skills the right one often did not fire, and none of them looked back: asked which campaigns to run to go from 57 enrollments to 1,000, the model listed campaigns. One skill with a stage check fired in 37 of 39 runs of the same eval cases, against 21 of 39 (see [evals](evals/README.md)).
+- **Result, not method.** Each stage uses its frameworks to think and check, and keeps them out of the answer. The reader gets the statement, the insight, the comparison or the plan.
+- **No invented numbers.** Targets, dates, owners, scores and probabilities belong to the user. When they are missing, the skill says so instead of filling them in.
+- **Recommendation only on request.** The `decide` stage lays the options out fairly and names a winner only when asked.
+- **No connectors or external tools required.** The `analyze` and `decide` stages compute with code when the environment can run it and show the arithmetic when it cannot. For charts, decks or spreadsheets the skill hands the structure to whatever skill the environment has.
 
 ## Sources
 

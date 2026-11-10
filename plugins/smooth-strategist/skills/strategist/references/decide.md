@@ -1,15 +1,10 @@
----
-name: decide
-description: "Use when there is a choice to make between options, or a list to prioritize, and the user wants it laid out fairly before choosing: sizes how much care the decision deserves, puts the options side by side on the same criteria, handles uncertainty with expected value or scenarios, and makes clear who decides. Fits any domain, e.g. \"should we build or buy?\", \"help me choose between these three vendors\", \"which of these should we do first?\", \"two teams disagree on the approach, how do we settle it?\", \"me ajuda a decidir entre essas opções\", \"monta uma matriz de decisão\", \"qual priorizar?\". Also for should-we-do-X questions where the problem behind X is already agreed and the options are known. Not for working out what the problem is (use frame) or for planning how to carry out a choice already made (use plan)."
----
-
 # Decide
 
 Lay out a decision so that whoever owns it can choose well and explain why afterwards.
 
-Fourth of five skills in one cycle: `frame` → `analyze` → `narrate` → **decide** → `plan`. Each works alone.
+Fourth of five stages: `frame` → `analyze` → `narrate` → **decide** → `plan`.
 
-This skill structures the decision; the decider chooses. Give a recommendation when the user asks for one. A question of the form "should we X?" or "which first?" counts as asking: answer it after the comparison, not before. When the user asks only to lay out or compare options, make the trade-offs clear and stop there. A recommendation nobody asked for tends to bend the comparison toward itself.
+This stage structures the decision; the decider chooses. Give a recommendation when the user asks for one. A question of the form "should we X?" or "which first?" counts as asking: answer it after the comparison, not before. When the user asks only to lay out or compare options, make the trade-offs clear and stop there. A recommendation nobody asked for tends to bend the comparison toward itself.
 
 It works the same for a company picking a vendor, a team picking an architecture or a person picking a job. Criteria and values come from the user.
 
@@ -122,4 +117,4 @@ Points that change the choice go inside the comparison, not in a separate note. 
 
 Prose, lists and tables follow the user's preferences when they have any; short structured text is the default. If the user asks for a deck, document or spreadsheet, use the skills the environment has, with this structure as content.
 
-Once the choice is made, `plan` turns it into execution.
+Once the choice is made, the `plan` stage turns it into execution.

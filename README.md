@@ -64,7 +64,7 @@ The skill ships with a [trigger eval](plugins/smooth-operator/evals/README.md): 
 | --- | --- | --- |
 | [`ads-ops`](plugins/ads-ops/README.md) | plugin | Meta Ads and TikTok Ads operations: create, duplicate, update and audit campaigns with dry-run and paused creation. |
 | [`kommo`](plugins/kommo/README.md) | plugin | Kommo CRM operations with approval gates, funnel reports, pipeline redesign, validated Salesbots and widgets. |
-| [`smooth-strategist`](plugins/smooth-strategist/README.md) | plugin | Structured problem solving for any domain in five skills: frame, analyze, narrate, decide, plan. |
+| [`smooth-strategist`](plugins/smooth-strategist/README.md) | plugin | Structured problem solving for any domain in one skill with five stages: frame, analyze, narrate, decide, plan. |
 | [`quero-que-desenhe`](skills/quero-que-desenhe/SKILL.md) | skill | In Brazilian Portuguese: explains any topic "like I'm 5" as a comic-style HTML page with big drawings, few words and everyday Brazilian references. |
 
 ```bash

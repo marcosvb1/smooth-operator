@@ -1,13 +1,8 @@
----
-name: analyze
-description: "Use when there is data, a spreadsheet, numbers or collected evidence and the user needs conclusions that answer a question, not just a description: picks the analysis each question calls for (trend, comparison, composition, concentration, bridge between two numbers, root cause), runs it and writes each finding as fact, why it matters and what to do about it. Fits any domain, e.g. \"what does this spreadsheet tell us?\", \"give me the 3 main takeaways from these numbers\", \"why did response time go up? here is the export\", \"o que esses dados dizem?\", \"tira os principais insights dessa planilha\", \"qual a causa raiz, olhando esses números?\". Not for writing a query, cleaning a dataset or building a dashboard with no question to answer, for structuring a problem that has no data yet (use frame), or for hands-on debugging of a specific bug in the current repo."
----
-
 # Analyze
 
-An analysis says what happened. An insight says what that means for the question being asked. A capable model already knows which chart or method fits which question; this skill holds the few habits that separate a conclusion the user can rely on from one that merely sounds right.
+An analysis says what happened. An insight says what that means for the question being asked. A capable model already knows which chart or method fits which question; this stage holds the few habits that separate a conclusion the user can rely on from one that merely sounds right.
 
-Second of five skills in one cycle: `frame` → **analyze** → `narrate` → `decide` → `plan`. Each works alone. When there is no problem statement, say in one sentence which question the analysis answers before starting.
+Second of five stages: `frame` → **analyze** → `narrate` → `decide` → `plan`.
 
 Respond in the user's language.
 
@@ -45,6 +40,6 @@ Fix what does not match and drop a number that cannot be verified. A side figure
 
 Only the insights that answer the question, in the quantity asked for (if they asked for 3, give 3). Each one has the message in one sentence, the numbers behind it with their period, and why it matters and what to do or check. After them, one line per hypothesis tested and not supported, then the assumptions and the missing data, in a few lines.
 
-Left out: explanations of how an analysis works, status tables, and this skill's vocabulary. Produce a chart, spreadsheet or slide only if the user asks or the deliverable is visual, with the tools the environment has; a chart nobody asked for costs time and does not improve the conclusion. Prose, lists and tables follow the user's preferences when they have any.
+Left out: explanations of how an analysis works, status tables, and this stage's vocabulary. Produce a chart, spreadsheet or slide only if the user asks or the deliverable is visual, with the tools the environment has; a chart nobody asked for costs time and does not improve the conclusion. Prose, lists and tables follow the user's preferences when they have any.
 
-When the findings need to become a recommendation for someone, continue with `narrate`.
+When the findings need to become a recommendation for someone, the next stage is `narrate`.
