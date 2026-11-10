@@ -15,10 +15,10 @@ Respond in the user's language.
 
 ## Flow
 
-1. State the central question and who the reader is.
+1. State the central question and who the reader is, and decide what is being asked for: **the piece itself** (an executive summary, an email, a memo, a note, the story of what happened) or **a storyline** for something longer that someone will build afterwards (a deck, a long document).
 2. Redo the arithmetic on the numbers the user brought, before building anything on them.
 3. Pick the structure (table below).
-4. Write the governing idea and the message of each section.
+4. Write the governing idea and the message of each section. When the piece itself was asked for, then write the piece.
 5. Check the story.
 
 ## Which structure to use
@@ -86,14 +86,21 @@ Drop the fairy-tale wording in the final text; keep the causal chain. This works
 - Each section or slide carries one message.
 - Read in order, the section messages alone tell the story.
 - Every claim has evidence from the analysis.
-- The story survives the user's own numbers. If a number weakens the proposal (the alternative costs more than the current setup, the target does not close on their own figures), it goes into the story at the point where the audience would ask, already with the right reading. The audience will find the number anyway, and it is better coming from whoever presents. Do not leave it in a note outside the deck.
+- The story survives the user's own numbers. If a number weakens the proposal (the alternative costs more than the current setup, the target does not close on their own figures), it goes into the story at the point where the audience would ask, already with the right reading. The audience will find the number anyway, and it is better coming from whoever presents. Do not leave it in a note outside the document.
+- The text states only what the user gave. A cause or a detail that was inferred is either left out or raised with the user in the note, not written into the piece as fact.
 
 ## What to deliver
 
 The user wants the story, not an explanation of the structure. Name the structure at most once, if that helps the reader. The checks do not become sections.
 
-Deliver the central idea in one sentence and the sequence of sections or slides, each with its heading and what goes in it. Follow the user's heading style: some want the message as the heading, others a neutral label with the message in the body.
+**When the piece itself was asked for, write it**, complete and ready to send, in the voice of whoever will sign it and addressed to its reader. "Write the exec summary" or "tell the story of the project" asks for the text, not for an outline of it; an outline with notes on what to say in each part leaves the user with the writing still to do. Keep it to the length the format implies: an executive summary fits on a page.
 
-Points that change the story go inside the story, not in a separate note. Assumptions and missing data go at the end, in a few lines. Cut what does not change what the user will present.
+Anything meant for the user rather than for the reader stays out of the piece: a correction to their brief, a claim you did not make because their numbers do not support it, an assumption, a gap, an option for a stronger version. Put those in a short note before or after the piece, clearly separated from it, so the piece can be copied and sent as it is.
 
-Prose, lists and tables follow the user's format and tone preferences when they have any; short structured text is the default when they do not. If the user asks for the deck or the document itself, use the skills the environment has, with this storyline as content.
+**When a storyline was asked for** (a deck, a long document someone will build), deliver the central idea in one sentence and the sequence of sections or slides, each with its heading and what goes in it.
+
+Follow the user's heading style: some want the message as the heading, others a neutral label with the message in the body.
+
+Facts that change the story go inside the story, not in the note: the reader has to see them. Assumptions and missing data go in the note to the user, in a few lines. Cut what does not change what the user will present.
+
+Prose, lists and tables follow the user's format and tone preferences when they have any; plain prose with few headings is the default for a piece, and short structured text for a storyline. If the user asks for slides or a formatted file, use the skills the environment has, with this storyline as content.

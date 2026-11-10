@@ -20,7 +20,7 @@ Respond in the user's language.
 3. Check the statement.
 4. Pick a way to break it down and build the tree, 2 to 4 levels deep.
 5. Check the tree.
-6. Deliver the statement, the tree and the analysis plan.
+6. Deliver the statement, the tree and where to start, scaled to the problem (see "What to deliver").
 
 ## Define
 
@@ -151,8 +151,8 @@ Like the statement check, this is for adjusting the tree. In the answer, mention
 
 The user wants the result, not the method. The frameworks and checks above are for thinking and revising. The answer has:
 
-1. **Problem statement** in one or two sentences. If it helps, show in a few lines the SCQ or the Quest behind it, only one of them.
-2. **Tree** as an indented list, with the rule used for the split in one sentence. If the user wants a picture, draw it with Mermaid:
+1. **The problem** in one or two sentences, in the user's words.
+2. **The breakdown** as an indented list. If the user wants a picture, draw it with Mermaid:
 
 ```mermaid
 graph LR
@@ -163,8 +163,22 @@ graph LR
   B --> B1[Driver C]
 ```
 
-3. **Analysis plan**: for each leaf or hypothesis, the question to answer, the data needed and the kind of analysis (trend, comparison, composition, concentration, root cause and so on, from `analyze`). Say where to start.
-4. **Assumptions and open points** the user has to confirm, one line each. From the definition sheet, only the fields that depend on the user (decider, off limits, deadline) go here.
+3. **What to look at, in order**: for each branch worth checking, the question to answer and the data or fact that answers it. Start with the branch most likely to explain the problem or cheapest to check, and say what the user can do today.
+4. **Open points** the user has to confirm, one line each. From the definition sheet, only the fields that depend on the user (decider, off limits, deadline) go here.
+
+Keep the method's vocabulary out of the answer. "Quest", "SCQ", "MECE", "statement", "split rule", "driver", "hypothesis tree" and "analysis plan" are names for thinking; the user gets the content under ordinary headings, or under none.
+
+### Scale to the problem
+
+The four parts above suit a problem inside an organization that someone will investigate with data. Shrink them when the problem is smaller or personal.
+
+For a personal problem ("I feel stuck", "I don't know whether to move"), write the way a thoughtful friend who thinks clearly would talk, in prose, with no table and no tree notation:
+
+- say what the real question seems to be, which is often not the one asked;
+- pull apart the things that are tangled together (being bored, being underpaid and being afraid are three problems with three different fixes);
+- for each, say what would settle it and the one cheap thing to find out or try first.
+
+The structure still does the work; it just does not show. A person who brings a worry and receives a consulting document feels processed, not helped.
 
 Left out of the answer: sections for the statement check, the tree check or the full definition sheet, and explanations of how each framework works. The shorter the answer, the sooner it turns into work. Cut what does not change the user's next step.
 
