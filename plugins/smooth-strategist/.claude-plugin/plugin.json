@@ -1,0 +1,18 @@
+{
+  "name": "smooth-strategist",
+  "version": "0.2.0",
+  "description": "Structured problem solving for any domain, in one skill with five stages: frame the problem, analyze the evidence, narrate the answer, structure the decision and plan the execution.",
+  "author": {
+    "name": "marcosvb1"
+  },
+  "repository": "https://github.com/marcosvb1/smooth-operator",
+  "license": "MIT",
+  "keywords": [
+    "problem-solving",
+    "strategy",
+    "issue-tree",
+    "decision-making",
+    "storyline",
+    "planning"
+  ]
+}
