@@ -21,6 +21,7 @@ Respond in the user's language.
 4. Write the insight: fact → why it matters → what it suggests.
 5. Decide how to show it (table further down). Produce the chart file only if the user asked or the deliverable is visual; otherwise, when the finding is headed for a presentation, describe the chart in one line. Charts nobody asked for cost time and do not improve the conclusion.
 6. Close each question by saying what the data confirms, what it rules out and what is still missing to conclude. What the data confirms goes in the text of the insight. Hypotheses that were tested and not supported get one line each after the insights, and missing data goes in the closing lines. No separate status table.
+7. Run the last pass on the numbers (below) on the finished text.
 
 ## Part 1: Analyze
 
@@ -66,7 +67,18 @@ Respond in the user's language.
 - Small sample or incomplete data: say so.
 - In a seasonal series, compare equivalent periods (peak with peak), not neighbouring ones.
 - Be suspicious of patterns that are too neat. An identical value every month may be an allocation, not a measurement.
-- Check the arithmetic against a total the user would recognize before reporting anything.
+- Compare like with like: both sides of a comparison cover the same period and the same definition. Do not set a full year against a half year, or a January-to-June average against a February-to-June one.
+
+### Last pass on the numbers
+
+Most errors in an analysis are not in the reasoning; they are a wrong figure in an otherwise right sentence. After the text is written and before delivering it, go through every number in it, one by one:
+
+- recompute it from the data, with code when a code tool is available, instead of trusting the figure carried over from an earlier step;
+- check the label next to it: the period, the unit and what it counts ("February to June" followed by six values is wrong before any arithmetic);
+- check every claim of direction ("fewer than", "higher than", "between X and Y") against the two values it compares;
+- check derived figures (rates, per-unit costs, break-even points, time estimates) by dividing or adding the parts again.
+
+Fix what does not match, and drop a number that cannot be verified. A side figure that adds colour and turns out wrong costs more trust than it earned.
 
 ## Part 2: Insight
 
