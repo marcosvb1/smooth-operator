@@ -11,7 +11,7 @@ Respond in the user's language.
 ## Flow
 
 1. Collect the minimum facts: context, goal, obstacle, who decides, deadline. For a personal problem the decider is the user. Proceed with what is given and list the gaps as open points. Stop to ask first, with at most two or three questions, only when the goal or the object of the problem cannot be inferred.
-2. Pick one way to define the problem (table below) and write the statement.
+2. Pick one way to define the problem (table below) and write the statement. Always work through one of the three, never free prose in their place: for a short request with little context, that is SCQ. The answer still shows the result in plain words.
 3. Check the statement.
 4. Pick a way to break it down and build the tree, 2 to 4 levels deep.
 5. Check the tree.
@@ -161,7 +161,7 @@ graph LR
 3. **What to look at, in order**: for each branch worth checking, the question to answer and the data or fact that answers it. Start with the branch most likely to explain the problem or cheapest to check, and say what the user can do today.
 4. **Open points** the user has to confirm, one line each. From the definition sheet, only the fields that depend on the user (decider, off limits, deadline) go here.
 
-Keep the method's vocabulary out of the answer. "Quest", "SCQ", "MECE", "statement", "split rule", "driver", "hypothesis tree" and "analysis plan" are names for thinking; the user gets the content under ordinary headings, or under none.
+Keep the method's vocabulary out of the body of the answer; the method note that closes it is the one exception. "Quest", "SCQ", "MECE", "statement", "split rule", "driver", "hypothesis tree" and "analysis plan" are names for thinking; the user gets the content under ordinary headings, or under none.
 
 ### Scale to the problem
 
