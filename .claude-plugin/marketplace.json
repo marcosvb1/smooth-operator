@@ -47,6 +47,20 @@
       ]
     },
     {
+      "name": "smooth-strategist",
+      "source": "./plugins/smooth-strategist",
+      "description": "Structured problem solving for any domain, in five skills: frame the problem, analyze the evidence, narrate the answer, structure the decision and plan the execution.",
+      "category": "productivity",
+      "keywords": [
+        "problem-solving",
+        "strategy",
+        "issue-tree",
+        "decision-making",
+        "storyline",
+        "planning"
+      ]
+    },
+    {
       "name": "quero-que-desenhe",
       "source": "./skills",
       "strict": false,
