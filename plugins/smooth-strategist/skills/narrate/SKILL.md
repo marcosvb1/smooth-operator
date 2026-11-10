@@ -1,24 +1,32 @@
 ---
 name: narrate
-description: "Use when findings or a recommendation have to be communicated to someone who will decide or act: builds the storyline for a document, deck, memo, executive summary or email with the answer first and the evidence under it, or tells what already happened as a retrospective. Fits any domain, e.g. \"turn this analysis into a recommendation for the board\", \"outline the deck for this proposal\", \"write the exec summary\", \"how do I present this to my manager?\", \"monta o storyline dessa apresentação\", \"organiza esses achados numa narrativa\", \"escreve o resumo executivo\". Not for designing or generating the slides themselves (a presentation skill does that with this storyline as content), for brand or advertising copy, or for fiction."
+description: "Use when findings or a recommendation have to be communicated to someone who will decide or act: builds the storyline for a document, deck, memo, executive summary or email with the answer first and the evidence under it, or tells what already happened as a retrospective. Fits any domain, e.g. \"turn this analysis into a recommendation for the board\", \"outline the deck for this proposal\", \"write the exec summary\", \"how do I present this to my manager?\", \"write up how the project went\", \"monta o storyline dessa apresentação\", \"organiza esses achados numa narrativa\", \"escreve o resumo executivo\". Not for extracting the findings from data (use analyze) or comparing options (use decide), for designing or generating the slides themselves (a presentation skill does that with this storyline as content), for brand or advertising copy, or for fiction."
 ---
 
 # Narrate
 
 Arrange what was found into a story a busy reader can follow and act on: the answer first, the reasons under it, the evidence under each reason.
 
-Third of five skills in one cycle: `frame` → `analyze` → **narrate** → `decide` → `plan`. Each works alone. If the user comes straight here, confirm in one sentence what the central question is and which findings carry the story.
+Third of five skills in one cycle: `frame` → `analyze` → **narrate** → `decide` → `plan`. Each works alone. If the user comes straight here, state in one sentence what the central question is and which findings carry the story, and go on.
 
 The structure is the same for a board paper, an engineering proposal, a research summary or a note to a landlord. Tone and vocabulary come from the audience.
 
 Respond in the user's language.
+
+## Flow
+
+1. State the central question and who the reader is.
+2. Redo the arithmetic on the numbers the user brought, before building anything on them.
+3. Pick the structure (table below).
+4. Write the governing idea and the message of each section.
+5. Check the story.
 
 ## Which structure to use
 
 | Situation | Use |
 | --- | --- |
 | A recommendation, in a document or deck, for someone who decides | **Pyramid** |
-| The opening of a deck, an executive summary, an email that recommends something | **SCQA** |
+| The opening of any of these: the first slide, an executive summary, an email that recommends something | **SCQA**, on top of a pyramid |
 | Telling what already happened: a retrospective, a case, a post-mortem | **Story Spine** |
 
 ## Pyramid
@@ -57,7 +65,7 @@ Also from Minto. The short form of the same idea, for openings.
 
 Then the arguments in pyramid form, and the next steps.
 
-When the reader is senior or short on time, lead with the answer and give situation and complication after it, in a sentence each.
+By default lead with the answer and give situation and complication after it, in a sentence each. Keep the S-C-Q-A order when the reader lacks the context or is likely to resist the answer.
 
 ## Story Spine
 
@@ -78,7 +86,7 @@ Drop the fairy-tale wording in the final text; keep the causal chain. This works
 - Each section or slide carries one message.
 - Read in order, the section messages alone tell the story.
 - Every claim has evidence from the analysis.
-- The story survives the user's own numbers. Before building it, redo the arithmetic with the data they brought. If a number weakens the proposal (the alternative costs more than the current setup, the target does not close on their own figures), it goes into the story at the point where the audience would ask, already with the right reading. The audience will find the number anyway, and it is better coming from whoever presents. Do not leave it in a note outside the deck.
+- The story survives the user's own numbers. If a number weakens the proposal (the alternative costs more than the current setup, the target does not close on their own figures), it goes into the story at the point where the audience would ask, already with the right reading. The audience will find the number anyway, and it is better coming from whoever presents. Do not leave it in a note outside the deck.
 
 ## What to deliver
 

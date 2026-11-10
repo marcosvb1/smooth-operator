@@ -27,10 +27,10 @@ Then ask in plain words ("sales dropped, what do we do?", "what does this spread
 ## Design
 
 - **Result, not method.** Each skill uses its frameworks to think and check, and keeps them out of the answer. The reader gets the statement, the insight, the comparison or the plan.
-- **No invented numbers.** Targets, dates, owners and probabilities belong to the user. When they are missing, the skill leaves a marked slot.
+- **No invented numbers.** Targets, dates, owners, scores and probabilities belong to the user. When they are missing, the skill leaves a marked slot.
 - **Recommendation only on request.** `decide` lays the options out fairly and names a winner only when asked.
-- **No tools required.** The skills produce text. For charts, decks or spreadsheets they hand the structure to whatever skill the environment has.
+- **No connectors or external tools required.** `analyze` and `decide` compute with code when the environment can run it and show the arithmetic when it cannot. For charts, decks or spreadsheets the skills hand the structure to whatever skill the environment has.
 
 ## Sources
 
-The methods come from published work, cited where each is used: Barbara Minto, *The Pyramid Principle*; Charles Conn and Robert McLean, *Bulletproof Problem Solving*; Arnaud Chevallier and Albrecht Enders, *Solvable*; A.G. Lafley and Roger Martin, *Playing to Win*; Jeff Bezos's 2015 and 2016 letters to Amazon shareholders; Gokul Rajaram's SPADE; Kenn Adams's Story Spine; Gary Klein's pre-mortem.
+The main methods come from published work, cited where each is used: Barbara Minto, *The Pyramid Principle*; Charles Conn and Robert McLean, *Bulletproof Problem Solving*; Arnaud Chevallier and Albrecht Enders, *Solvable*; A.G. Lafley and Roger Martin, *Playing to Win*; Jeff Bezos's 2015 and 2016 letters to Amazon shareholders; Gokul Rajaram's SPADE; Kenn Adams's Story Spine; Gary Klein's pre-mortem; the urgent vs. important matrix attributed to Dwight Eisenhower.

@@ -1,6 +1,6 @@
 ---
 name: decide
-description: "Use when there is a choice to make between options, or a list to prioritize, and the user wants it laid out fairly before choosing: sizes how much care the decision deserves, puts the options side by side on the same criteria, handles uncertainty with expected value or scenarios, and makes clear who decides. Fits any domain, e.g. \"should we build or buy?\", \"help me choose between these three vendors\", \"which of these should we do first?\", \"two teams disagree on the approach, how do we settle it?\", \"me ajuda a decidir entre essas opções\", \"monta uma matriz de decisão\", \"qual priorizar?\". Also for should-we-do-X questions where the options are already known. Not for working out what the problem is (use frame) or for planning how to carry out a choice already made (use plan)."
+description: "Use when there is a choice to make between options, or a list to prioritize, and the user wants it laid out fairly before choosing: sizes how much care the decision deserves, puts the options side by side on the same criteria, handles uncertainty with expected value or scenarios, and makes clear who decides. Fits any domain, e.g. \"should we build or buy?\", \"help me choose between these three vendors\", \"which of these should we do first?\", \"two teams disagree on the approach, how do we settle it?\", \"me ajuda a decidir entre essas opções\", \"monta uma matriz de decisão\", \"qual priorizar?\". Also for should-we-do-X questions where the problem behind X is already agreed and the options are known. Not for working out what the problem is (use frame) or for planning how to carry out a choice already made (use plan)."
 ---
 
 # Decide
@@ -21,7 +21,11 @@ Respond in the user's language.
 2. Size it: how reversible is it (below)? That sets how much analysis it deserves.
 3. Check the options are real alternatives, including "do nothing" and "wait" when they are viable.
 4. Pick the comparison that fits (table below) and fill it in with the user's facts.
-5. Deliver the comparison, what to find out before deciding and who decides.
+5. Deliver the comparison, what to find out before deciding, who decides and, when asked for, the recommendation.
+
+## Numbers
+
+Weights, scores and probabilities come from the user or from facts that can be cited. When they are missing, ask for them or leave a marked slot (`[ ]`); do not fill them in to make the method run. A made-up score looks like analysis and decides the result. For a decision tree with no probabilities, give the break-even probability (how likely the good outcome must be for the option to win) or fall back to scenarios.
 
 ## How much care it deserves
 
@@ -67,7 +71,7 @@ Start here before reaching for anything heavier. When each side is defending its
 1. Make sure the options really differ.
 2. Choose the criteria, and the weights if any, **before** scoring. Criteria chosen after tend to be chosen for the option someone already prefers.
 3. Score each option on each criterion on one consistent scale (1 to 5, or high, medium, low).
-4. With weights, compute the weighted average with code.
+4. With weights, compute the weighted average, with code when a code tool is available and otherwise showing the arithmetic.
 5. Write one line per option: where it wins and where it lacks.
 
 If a small change in one weight flips the winner, say so. The result is then a tie and the decision rests on that criterion.
@@ -78,7 +82,7 @@ If a small change in one weight flips the winner, say so. The result is then a t
 - **Chance node**: the possible outcomes of each option, each with a probability. Probabilities under a node add up to 1.
 - **Outcome**: the value of each end point, in one unit (money, time, whatever the user counts in).
 
-Expected value of an option = sum of probability × value over its outcomes. Compare options by expected value and also by worst case: an option with a higher expected value and a ruinous worst case may still be the wrong one. Compute with code when there are numbers, and show where each probability came from.
+Expected value of an option = sum of probability × value over its outcomes. Compare options by expected value and also by worst case: an option with a higher expected value and a ruinous worst case may still be the wrong one. Compute with code when a code tool is available, otherwise show the arithmetic, and say where each probability came from.
 
 ### Scenarios
 
@@ -107,7 +111,8 @@ Deliver:
 - the comparison in the form the chosen method produces: an ordered list, a side-by-side table on the same criteria, a tree with expected values, or roles and steps;
 - what is reversible and what is not;
 - what to find out before deciding, and how long that takes;
-- who decides.
+- who decides;
+- the recommendation, only when asked for, after the comparison, with the fact that would change it.
 
 In running text, go through the same dimensions for every option in the same order. Without that the comparison stops being fair, and each option gets judged on whatever favours it.
 

@@ -18,7 +18,7 @@ Respond in the user's language.
 1. Write the outcome: what will be true when this is done, and how anyone will know.
 2. Work backward from the outcome to the phases.
 3. Split the work into workstreams and name an owner for each.
-4. Place the milestones and the decisions still to be made.
+4. Place the milestones and the decisions still to be made, and mark what depends on what.
 5. Run a pre-mortem and add what it turns up.
 6. Say what will be measured and when the plan gets revisited.
 
@@ -68,7 +68,7 @@ Say what will be tracked during execution, how often, and what result would mean
 ## Checking the plan
 
 - The outcome can be verified by someone outside the team.
-- Every workstream has one owner.
+- Every workstream has one owner, or a flagged slot for one.
 - Every phase has an exit condition that can be checked.
 - No milestone depends on a decision that is not on the plan.
 - The first stretch is concrete enough to start now. Later phases may be coarser.
@@ -80,11 +80,12 @@ The user wants the plan filled in, not a description of what a plan contains. Th
 Default layout:
 
 1. Outcome and measure, in two lines.
-2. The grid: workstreams with owners in rows, phases in columns, main activities in the cells, milestones marked.
+2. The grid: workstreams with owners in rows, phases in columns, main activities in the cells, milestones marked and the longest chain of dependencies pointed out.
 3. Decisions still to come: decision, who, by when.
 4. The two or three risks that matter, each with its action or early sign.
-5. What will be measured and when the plan is revisited.
-6. Assumptions and gaps the user has to fill (owners not named, dates not set), one line each.
+5. Who needs to be told what and when, if the plan changes how other people work.
+6. What will be measured and when the plan is revisited.
+7. Assumptions and gaps the user has to fill (owners not named, dates not set), one line each.
 
 For a small job, collapse this to the outcome, an ordered list of steps with owner and date, and one line on what to watch.
 

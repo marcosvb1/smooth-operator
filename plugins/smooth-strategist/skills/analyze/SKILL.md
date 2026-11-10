@@ -1,6 +1,6 @@
 ---
 name: analyze
-description: "Use when there is data, a spreadsheet, numbers or collected evidence and the user needs conclusions that answer a question, not just a description: picks the analysis each question calls for (trend, comparison, composition, concentration, bridge between two numbers, root cause), runs it and writes each finding as fact, why it matters and what to do about it. Fits any domain, e.g. \"what does this spreadsheet tell us?\", \"give me the 3 main takeaways from these numbers\", \"why did response time go up? here is the export\", \"o que esses dados dizem?\", \"tira os principais insights dessa planilha\", \"qual a causa raiz, olhando esses números?\". Not for writing a query, cleaning a dataset or building a dashboard with no question to answer, and not for structuring a problem that has no data yet (use frame), and not for debugging or profiling code in the current repo."
+description: "Use when there is data, a spreadsheet, numbers or collected evidence and the user needs conclusions that answer a question, not just a description: picks the analysis each question calls for (trend, comparison, composition, concentration, bridge between two numbers, root cause), runs it and writes each finding as fact, why it matters and what to do about it. Fits any domain, e.g. \"what does this spreadsheet tell us?\", \"give me the 3 main takeaways from these numbers\", \"why did response time go up? here is the export\", \"o que esses dados dizem?\", \"tira os principais insights dessa planilha\", \"qual a causa raiz, olhando esses números?\". Not for writing a query, cleaning a dataset or building a dashboard with no question to answer, for structuring a problem that has no data yet (use frame), or for hands-on debugging of a specific bug in the current repo."
 ---
 
 # Analyze
@@ -17,10 +17,10 @@ Respond in the user's language.
 
 1. For each branch or hypothesis, write the question the analysis must answer.
 2. Pick the analysis by what the question asks (table below).
-3. Run it on the real data. When there is data, compute with code. Never invent a number; when estimating, show the assumption.
+3. Run it on the real data. When there is data, compute with code if a code tool is available; otherwise show the arithmetic so the user can check it. Never invent a number; when estimating, show the assumption.
 4. Write the insight: fact → why it matters → what it suggests.
 5. Decide how to show it (table further down). Produce the chart file only if the user asked or the deliverable is visual; otherwise, when the finding is headed for a presentation, describe the chart in one line. Charts nobody asked for cost time and do not improve the conclusion.
-6. Close each question by saying what the data confirms, what it rules out and what is still missing to conclude. That goes in the text of the insight, not in a separate status table.
+6. Close each question by saying what the data confirms, what it rules out and what is still missing to conclude. What the data confirms goes in the text of the insight. Hypotheses that were tested and not supported get one line each after the insights, and missing data goes in the closing lines. No separate status table.
 
 ## Part 1: Analyze
 
@@ -97,7 +97,7 @@ The user wants the conclusions, not the catalogue of analyses. Deliver only the 
 3. Why it matters and what it suggests investigating or doing.
 4. When the finding is going into a presentation, the visual in plain words, such as "bars for monthly volume with the response time line on top".
 
-After the insights come the assumptions and the missing data, in a few lines.
+After the insights come one line per hypothesis tested and not supported, then the assumptions and the missing data, in a few lines.
 
 Left out of the answer: this skill's internal labels ("Form:", "Message:", "Bridge"), status tables for hypotheses, explanations of how each analysis works, and sections that do not change the reading. Those names help choose; to the reader they are noise.
 

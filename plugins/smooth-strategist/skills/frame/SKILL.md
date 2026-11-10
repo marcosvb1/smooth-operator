@@ -1,6 +1,6 @@
 ---
 name: frame
-description: "Use when a request is broad or vague and nobody has written down what the problem actually is, before pulling data or proposing solutions: turns it into a precise problem statement and a tree of drivers or hypotheses that says what to look at first. Fits any domain, e.g. \"sales dropped, what do we do?\", \"our support queue keeps growing and nobody knows why\", \"I feel stuck in my career and don't know what to change\", \"as vendas caíram, o que fazemos?\", \"me ajuda a estruturar esse problema\", \"break this problem down\", \"build an issue tree\". Also when a problem is stated as a symptom, already contains its solution, or is too big to act on. Not for analyzing data that is already on the table (use analyze) or for comparing options that are already defined (use decide), and not for debugging or profiling code in the current repo."
+description: "Use when a request is broad or vague and nobody has written down what the problem actually is, before pulling data or proposing solutions: turns it into a precise problem statement and a tree of drivers or hypotheses that says what to look at first. Fits any domain, e.g. \"sales dropped, what do we do?\", \"our support queue keeps growing and nobody knows why\", \"I feel stuck in my career and don't know what to change\", \"as vendas caíram, o que fazemos?\", \"me ajuda a estruturar esse problema\", \"break this problem down\", \"build an issue tree\". Also when a problem is stated as a symptom, already contains its solution, or is too big to act on. Not for analyzing data that is already on the table (use analyze) or for comparing options that are already defined (use decide), and not for hands-on debugging of a specific bug in the current repo; framing an engineering problem such as a slow test suite is in scope."
 ---
 
 # Frame
@@ -15,7 +15,7 @@ Respond in the user's language.
 
 ## Flow
 
-1. Collect the minimum facts: context, goal, obstacle, who decides, deadline. For a personal problem the decider is the user. Ask only what the material at hand does not already answer.
+1. Collect the minimum facts: context, goal, obstacle, who decides, deadline. For a personal problem the decider is the user. Proceed with what is given and list the gaps as open points. Stop to ask first, with at most two or three questions, only when the goal or the object of the problem cannot be inferred.
 2. Pick one way to define the problem (table below) and write the statement.
 3. Check the statement.
 4. Pick a way to break it down and build the tree, 2 to 4 levels deep.
@@ -37,6 +37,8 @@ Use one by default. Combine them only when the user asks, or when the lack of ag
 ### Target and deadline
 
 A statement needs a target and a deadline to be testable, but both belong to the user and to whoever decides. If they were not given, do not make up a number. Derive one from the data when there is a natural reference ("back to last year's level"), or leave a slot to fill in: "reduce to [X] by [date]". An invented number, even when flagged as an assumption, tends to become a commitment nobody made.
+
+When the domain has no natural metric, as in many personal problems, use an observable condition ("have chosen between staying and moving, and know the first step") and add a date only if the user has one.
 
 ### SCQ: Situation, Complication, Question
 
