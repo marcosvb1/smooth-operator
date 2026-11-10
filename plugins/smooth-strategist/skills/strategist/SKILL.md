@@ -48,7 +48,7 @@ The references say to keep technique names out of the answer. That holds for the
 End every answer with a short block that starts with the bold label **Method** (translated: **Método** in Portuguese), in the user's language:
 
 - **Stage**: the stage or stages worked.
-- **Technique**: each technique used, by the name its reference gives it, and why that one fit this request instead of the alternatives in the same table. One line each. For a plan, name the parts of a plan that were used, plus the pre-mortem or the go-to-market layers when applied. If none of the listed techniques was used, say so.
+- **Technique**: each technique used, by the name its reference gives it, and why that one fit this request instead of the alternatives in the same table. One line each. Include a technique from another stage that was used in passing: a comparison against the target to size the gap is an analysis, and is listed as one (read that stage's table for its name). For a plan, name the parts of a plan that were used, plus the pre-mortem or the go-to-market layers when applied. If none of the listed techniques was used, say so.
 - **Steps**: which of the technique's steps or required contents were done, and which were skipped or left incomplete and why (usually a fact the user did not give).
 - **Earlier stages**: what the stage check found, in one line ("problem and gap were given; went straight to the plan", or "the gap had not been sized; did that first").
 
