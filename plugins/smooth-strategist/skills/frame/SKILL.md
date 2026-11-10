@@ -92,7 +92,7 @@ A good statement:
 - leaves room for more than one answer, so it does not contain the solution;
 - addresses the whole problem, not one corner of it.
 
-When it is unclear whether the statement describes a cause or only a symptom, ask "why?" a few times (the 5 Whys in `analyze`) before going on.
+When it is unclear whether the statement describes a cause or only a symptom, ask "why?" a few times, until the answer is a cause someone can act on, before going on.
 
 This check is for revising the sentence. If an item fails, fix the statement. The check does not become a section of the answer.
 

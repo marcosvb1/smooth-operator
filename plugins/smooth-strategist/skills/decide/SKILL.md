@@ -25,7 +25,9 @@ Respond in the user's language.
 
 ## Numbers
 
-Weights, scores and probabilities come from the user or from facts that can be cited. When they are missing, ask for them or leave a marked slot (`[ ]`); do not fill them in to make the method run. A made-up score looks like analysis and decides the result. For a decision tree with no probabilities, give the break-even probability (how likely the good outcome must be for the option to win) or fall back to scenarios.
+Weights, scores and probabilities come from the user or from facts that can be cited. When they are missing, do not fill them in to make the method run: a made-up score looks like analysis and decides the result.
+
+A missing value does not become an empty bracket inside the comparison either. A table the user will show to a committee has no blank cells: each cell says in words what is known ("3 months of 2 developers; cost not given"), and what has to be found out goes in its own short list under the table, with who can answer it. The comparison must be presentable as it is. For a decision tree with no probabilities, give the break-even probability (how likely the good outcome must be for the option to win) or fall back to scenarios.
 
 ## How much care it deserves
 
