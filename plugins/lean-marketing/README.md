@@ -7,8 +7,8 @@ A marketing plugin primarily designed for [Cowork](https://claude.com/product/co
 ## Installation
 
 ```bash
-claude plugin marketplace add anthropics/knowledge-work-plugins
-claude plugin install marketing@knowledge-work-plugins
+/plugin marketplace add marcosvb1/smooth-operator
+/plugin install lean-marketing@smooth-operator
 ```
 
 ## Commands
@@ -78,7 +78,7 @@ Configure your brand voice, style guide, and target personas in a local settings
 
 > If you see unfamiliar placeholders or need to check which tools are connected, see [CONNECTORS.md](CONNECTORS.md).
 
-This plugin works with the following MCP servers:
+No MCP servers are bundled. If you already have any of these connectors enabled, the skills use them:
 
 - **Slack** — Share drafts, reports, and briefs with your team
 - **Canva** — Create and edit design assets

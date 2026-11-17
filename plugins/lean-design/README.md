@@ -7,8 +7,8 @@ A design productivity plugin primarily designed for [Cowork](https://claude.com/
 ## Installation
 
 ```bash
-claude plugin marketplace add anthropics/knowledge-work-plugins
-claude plugin install design@knowledge-work-plugins
+/plugin marketplace add marcosvb1/smooth-operator
+/plugin install lean-design@smooth-operator
 ```
 
 ## Commands
@@ -17,11 +17,11 @@ Explicit workflows you invoke with a slash command:
 
 | Command | Description |
 |---|---|
-| `/critique` | Get structured design feedback — usability, visual hierarchy, accessibility, and consistency |
+| `/design-critique` | Get structured design feedback — usability, visual hierarchy, accessibility, and consistency |
 | `/design-system` | Audit, document, or extend your design system — components, tokens, patterns |
-| `/handoff` | Generate developer handoff specs — measurements, tokens, states, interactions, and edge cases |
+| `/design-handoff` | Generate developer handoff specs — measurements, tokens, states, interactions, and edge cases |
 | `/ux-copy` | Write or review UX copy — microcopy, error messages, empty states, onboarding flows |
-| `/accessibility` | Run an accessibility audit — WCAG compliance, color contrast, screen reader, and keyboard navigation |
+| `/accessibility-review` | Run an accessibility audit — WCAG compliance, color contrast, screen reader, and keyboard navigation |
 | `/research-synthesis` | Synthesize user research — interviews, surveys, usability tests into actionable insights |
 
 All commands work **standalone** (describe your design or paste screenshots) and get **supercharged** with MCP connectors.
@@ -44,7 +44,7 @@ Domain knowledge Claude uses automatically when relevant:
 ### Getting Design Feedback
 
 ```
-/critique
+/design-critique
 ```
 
 Share a Figma link, screenshot, or describe your design. Get structured feedback on usability, visual hierarchy, consistency, and accessibility.
@@ -68,7 +68,7 @@ Get context-appropriate copy with tone guidance, alternatives, and localization 
 ### Developer Handoff
 
 ```
-/handoff
+/design-handoff
 ```
 
 Share a Figma link and get a complete spec: measurements, design tokens, component states, interaction notes, and edge cases.
@@ -76,7 +76,7 @@ Share a Figma link and get a complete spec: measurements, design tokens, compone
 ### Accessibility Check
 
 ```
-/accessibility
+/accessibility-review
 ```
 
 Share a design or URL. Get a WCAG 2.1 AA compliance report with specific issues, severity, and remediation steps.

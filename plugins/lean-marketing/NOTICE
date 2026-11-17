@@ -5,4 +5,5 @@ Changes made by marcosvb1:
 - Removed .mcp.json: no MCP servers are bundled. Skills use whatever connectors are already enabled in your Claude account.
 - Renamed to "lean-marketing" and updated .claude-plugin/plugin.json.
 - Updated slash-command references to the new plugin name.
+- Pointed install instructions at this marketplace, reworded text about bundled MCP servers and fixed README command names to match the skill names.
 - Added a note at the top of CONNECTORS.md and README.md.

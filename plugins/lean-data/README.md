@@ -7,8 +7,8 @@ A data analyst plugin primarily designed for [Cowork](https://claude.com/product
 ## Installation
 
 ```
-claude plugin marketplace add anthropics/knowledge-work-plugins
-claude plugin install data@knowledge-work-plugins
+/plugin marketplace add marcosvb1/smooth-operator
+/plugin install lean-data@smooth-operator
 ```
 
 ## What It Does
@@ -37,7 +37,7 @@ Without a data warehouse connection, paste SQL results or upload CSV/Excel files
 | `/write-query` | Write optimized SQL for your dialect with best practices |
 | `/create-viz` | Create publication-quality visualizations with Python |
 | `/build-dashboard` | Build interactive HTML dashboards with filters and charts |
-| `/validate` | QA an analysis before sharing -- methodology, accuracy, and bias checks |
+| `/validate-data` | QA an analysis before sharing -- methodology, accuracy, and bias checks |
 
 ## Skills
 
@@ -99,7 +99,7 @@ Claude: [Generates self-contained HTML file]
 ### Pre-Share Validation
 
 ```
-You: /validate [shares analysis document]
+You: /validate-data [shares analysis document]
 
 Claude: [Reviews methodology] → [Checks for survivorship bias in churn analysis]
        → [Verifies aggregation logic] → [Flags: "Denominator excludes trial users
@@ -120,4 +120,4 @@ This plugin works best when connected to your data infrastructure. Add MCP serve
 - **Data Orchestration**: Airflow, dbt, Dagster, Prefect
 - **Data Ingestion**: Fivetran, Airbyte, Stitch
 
-Configure MCP servers in your `.mcp.json` or Claude Code settings to enable direct data access.
+Enable the matching connectors in your Claude account (or Claude Code settings) for direct data access.

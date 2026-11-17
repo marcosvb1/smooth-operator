@@ -64,12 +64,16 @@ The skill ships with a [trigger eval](plugins/smooth-operator/evals/README.md): 
 | --- | --- | --- |
 | [`ads-ops`](plugins/ads-ops/README.md) | plugin | Meta Ads and TikTok Ads operations: create, duplicate, update and audit campaigns with dry-run and paused creation. |
 | [`kommo`](plugins/kommo/README.md) | plugin | Kommo CRM operations with approval gates, funnel reports, pipeline redesign, validated Salesbots and widgets. |
+| [`lean-marketing`](plugins/lean-marketing/README.md) | plugin | Campaigns, content, brand review, SEO and performance reports. Connector-free fork of Anthropic's `marketing` plugin (Apache-2.0): same skills, no bundled MCP servers. |
+| [`lean-data`](plugins/lean-data/README.md) | plugin | SQL, exploration, visualization, dashboards and statistical analysis. Connector-free fork of Anthropic's `data` plugin (Apache-2.0): same skills, no bundled MCP servers. |
+| [`lean-design`](plugins/lean-design/README.md) | plugin | Design critique, design systems, UX copy, accessibility and handoff. Connector-free fork of Anthropic's `design` plugin (Apache-2.0): same skills, no bundled MCP servers. |
 | [`quero-que-desenhe`](skills/quero-que-desenhe/SKILL.md) | skill | In Brazilian Portuguese: explains any topic "like I'm 5" as a comic-style HTML page with big drawings, few words and everyday Brazilian references. |
 
 ```bash
 /plugin install ads-ops@smooth-operator
 /plugin install kommo@smooth-operator
 /plugin install quero-que-desenhe@smooth-operator
+/plugin install lean-marketing@smooth-operator
 ```
 
 Per project: `claude plugin install <plugin>@smooth-operator --scope project`.
