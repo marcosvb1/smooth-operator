@@ -7,7 +7,7 @@ The skill produces advice, not code, so "is the answer good?" has no test. Two n
 
 Neither set measures whether a framing or a plan is wise. That still takes a person who knows the domain.
 
-Graders are pass/fail. `regex` graders check a figure that must appear, or a placeholder that must not. `llm` graders ask one narrow question about the trap, judged 2-of-3. `fires.md` and `does-not-fire.md` (`tool_used: Skill`) check whether the skill was invoked. The list of cases is in [CASES.md](CASES.md).
+Graders are pass/fail. `regex` graders check a figure that must appear, or a placeholder that must not. `llm` graders ask one narrow question about the trap, judged 2-of-3. `fires.md` and `does-not-fire.md` (`tool_used: Skill`) check whether the skill was invoked. Five trap cases, one per stage, also have `method-note.md`, which checks that the answer closes with the Method note; it is marked `with-only`, so it does not count against the no-plugin arm. The list of cases is in [CASES.md](CASES.md).
 
 ## Run
 
@@ -53,6 +53,15 @@ What it shows:
 - Most of the gain from merging came from the skill firing at all. The comparison is not clean: the single skill's description was written after seeing the trap cases and is more insistent, so part of the gain may be the description and not the merge. The trigger cases are the check on that, since the description never saw them.
 
 Corrections made to graders along the way, so the columns are read with the same rules: `d01` matched `130` only as a whole word and missed "130k"; `p02` had a two-part criterion that failed correct answers; `n02` flagged an "R$ X" written in the note to the user, outside the email. The one-skill column is the run before four one-line wording fixes from review; only `n02` was rerun after them.
+
+## After the method note and the technique tables (0.3.0)
+
+Version 0.3.0 added the closing Method note, the table of analyses, the table of story structures and the go-to-market layers. Same cases, plugin arm only:
+
+- Trap cases: the skill fired in 38 of 39 runs and every run caught its trap (39 of 39). The Method note was present in 15 of 15 runs of the five cases that check for it. This run predates a round of wording fixes from review.
+- Trigger cases, rerun after those fixes: see the numbers in the pull request that introduced 0.3.0.
+
+None of this checks whether the technique named in the note was the right one or was followed. That is a conformance review against the method, done by reading answers, not by these graders.
 
 ## Limits
 

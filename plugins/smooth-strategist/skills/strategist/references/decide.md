@@ -101,7 +101,7 @@ From Gokul Rajaram, described in First Round Review.
 
 ## What to deliver
 
-The user wants the decision laid out, not an explanation of the model. Name the model at most once, if that helps.
+The user wants the decision laid out, not an explanation of the model. Name the model at most once in the body, if that helps.
 
 Deliver:
 

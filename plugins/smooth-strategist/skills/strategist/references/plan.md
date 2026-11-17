@@ -56,6 +56,16 @@ For risks, run a **pre-mortem** (from Gary Klein): assume the end date has arriv
 
 When the plan changes how other people work, say who needs to know what and when: before it starts, at each release, after it lands. More communication around the moments of change, less in between.
 
+### Launches: the go-to-market layers
+
+When the plan takes something to market, check the work against three layers, top to bottom, so that nothing is left for launch week:
+
+- **Offer**: the product, its price, the promotion and the key messages.
+- **Front-end channels**: every channel that will sell or serve it (site, sales team, partners, support) and what each needs to be ready: training, materials, access.
+- **Back-end systems and support**: the platforms it runs on, billing and finance, legal terms, compliance, reporting.
+
+Each layer becomes one or more workstreams in the grid.
+
 ### What to measure
 
 Say what will be tracked during execution, how often, and what result would mean the plan needs to change. Those results feed the next round, starting again from the problem statement.
