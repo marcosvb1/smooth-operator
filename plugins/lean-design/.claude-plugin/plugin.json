@@ -1,0 +1,15 @@
+{
+  "name": "lean-design",
+  "version": "0.1.0",
+  "description": "Accelerate design workflows — critique, design system management, UX writing, accessibility audits, research synthesis, and dev handoff. From exploration to pixel-perfect specs. Connector-free fork: no bundled MCP servers, uses whatever connectors you already have.",
+  "author": {
+    "name": "marcosvb1"
+  },
+  "repository": "https://github.com/marcosvb1/smooth-operator",
+  "license": "Apache-2.0",
+  "keywords": [
+    "design",
+    "connector-free",
+    "lean"
+  ]
+}

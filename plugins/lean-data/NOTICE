@@ -1,0 +1,8 @@
+This plugin is a modified copy of the "data" plugin (version 1.1.0) by Anthropic,
+from the anthropics/knowledge-work-plugins repository, licensed under the Apache License 2.0 (see LICENSE).
+
+Changes made by marcosvb1:
+- Removed .mcp.json: no MCP servers are bundled. Skills use whatever connectors are already enabled in your Claude account.
+- Renamed to "lean-data" and updated .claude-plugin/plugin.json.
+- Updated slash-command references to the new plugin name.
+- Added a note at the top of CONNECTORS.md and README.md.

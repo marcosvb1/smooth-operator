@@ -63,6 +63,36 @@
       "skills": [
         "./quero-que-desenhe"
       ]
+    },
+    {
+      "name": "lean-marketing",
+      "source": "./plugins/lean-marketing",
+      "description": "Create content, plan campaigns, and analyze performance across marketing channels. Maintain brand voice consistency, track competitors, and report on what's working. Connector-free fork: no bundled MCP servers, uses whatever connectors you already have.",
+      "category": "marketing",
+      "keywords": [
+        "marketing",
+        "connector-free"
+      ]
+    },
+    {
+      "name": "lean-data",
+      "source": "./plugins/lean-data",
+      "description": "Write SQL, explore datasets, and generate insights faster. Build visualizations and dashboards, and turn raw data into clear stories for stakeholders. Connector-free fork: no bundled MCP servers, uses whatever connectors you already have.",
+      "category": "data",
+      "keywords": [
+        "data",
+        "connector-free"
+      ]
+    },
+    {
+      "name": "lean-design",
+      "source": "./plugins/lean-design",
+      "description": "Accelerate design workflows — critique, design system management, UX writing, accessibility audits, research synthesis, and dev handoff. From exploration to pixel-perfect specs. Connector-free fork: no bundled MCP servers, uses whatever connectors you already have.",
+      "category": "design",
+      "keywords": [
+        "design",
+        "connector-free"
+      ]
     }
   ]
 }
